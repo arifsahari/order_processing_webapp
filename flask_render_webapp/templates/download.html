@@ -1,9 +1,10 @@
 {% extends 'index.html' %}
 {% block content %}
-    <h4>Processed Files</h4>
+    <h4>Processed Files</h4
+    <br>
     <section>
         <ul>
-            {% for file in files %}
+            {% for file in download %}
             <li>
                 {{ file }}
 <!--                 <a href='{{ url_for("download_file", filename=file) }}' download>Download</a> -->
