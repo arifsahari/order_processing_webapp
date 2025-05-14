@@ -2,11 +2,12 @@
 {% block content %}
     <h4>Processed Files</h4>
     <section>
-        <ul id='fileList'>
+        <ul>
             {% for file in files %}
             <li>
                 {{ file }}
-                <a href='{{ url_for("download_file", filename=file) }}' download>Download</a>
+<!--                 <a href='{{ url_for("download_file", filename=file) }}' download>Download</a> -->
+                <button onclick="window.location.href='{{ file.url }}'">Download</button>
                 <button onclick='deleteFile("{{ file }}")'>Delete</button>
             </li>
             {% endfor %}
