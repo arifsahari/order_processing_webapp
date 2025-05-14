@@ -539,36 +539,33 @@ def chartdata():
         'WEB OS': 'Oversea', 'WEB SP': 'Self Pickup'
     })
 
-
     bar_product_sum = df_chart.groupby(['Design'])['Order No'].nunique().reset_index(name='Total Orders')
     bar_product_sum = bar_product_sum.sort_values(by='Total Orders', ascending=False)[:20]
 
     bar_product_qty = df_chart.groupby(['Design'])['Quantity'].sum().reset_index(name='Total Orders')
     bar_product_qty = bar_product_qty.sort_values(by='Total Orders', ascending=False)[:20]
 
+    line_order_daily = df_chart.copy()
+    line_order_daily['Order Time'] = pd.to_datetime(line_order_daily['Order Time'], errors='coerce').dt.strftime('%Y-%m-%d')
+    line_order_daily = line_order_daily.groupby('Order Time')['Order No'].count().reset_index(name='Total Orders')
+    line_order_daily = line_order_daily.sort_values(by='Order Time', ascending=True)
+
+    line_order_monthly = df_chart.copy()
+    line_order_monthly['Order Time'] = pd.to_datetime(line_order_monthly['Order Time'], errors='coerce').dt.strftime('%Y-%m')
+    line_order_monthly = line_order_monthly.groupby('Order Time')['Order No'].count().reset_index(name='Total Orders')
+    line_order_monthly = line_order_monthly.sort_values(by='Order Time', ascending=True)
+
+    # Get necessary column
     bar_product_qty = bar_product_qty[['Design', 'Total Orders']]
     bar_product_sum = bar_product_sum[['Design', 'Total Orders']]
+    line_order_daily = line_order_daily[['Order Time', 'Total Orders']]
+    line_order_monthly = line_order_monthly[['Order Time', 'Total Orders']]
 
     chart_type = request.args.get('type', 'orders')
 
-    # if chart_type == 'bar-product-summary':
-    #     # generate orders chart data
-    #     data = {
-    #         'status': 'success', 'title': 'Total Products by Order', 'label': 'Total',
-    #         'x': bar_product_sum['Design'].tolist(), 'y': bar_product_sum['Total Orders'].tolist() }
-    # elif chart_type == 'bar-product-qty':
-    #     data = {
-    #         'status': 'success', 'title': 'Total Products by Quantity',
-    #         'x': bar_product_qty['Design'].tolist(), 'y': bar_product_qty['Total Orders'].tolist() }
-
-    # elif chart_type == 'bar-order-summary':
-    #     # generate revenue chart data
-    #     data = {
-    #         'status': 'success', 'title': 'Total Orders by Store', 'label': '',
-    #         'x': bar_order_sum['Store'].tolist(), 'y': bar_order_sum['Total Orders'].tolist()}
-
     if chart_type == 'product_summary':
         # generate orders chart data
+        # bar_product_sum = bar_chart(df_chart)
         data = {
             'status': 'success', 'title': 'Total Products by Order', 'label': 'Total',
             'x': bar_product_sum['Design'].tolist(), 'y': bar_product_sum['Total Orders'].tolist() }
@@ -581,12 +578,21 @@ def chartdata():
         data = {
             'status': 'success', 'title': 'Total Orders by Store', 'label': '',
             'x': bar_order_sum['Store'].tolist(), 'y': bar_order_sum['Total Orders'].tolist()}
+    elif chart_type == 'order_daily':
+        # generate revenue chart data
+        data = {
+            'status': 'success', 'title': 'Total Orders by Daily', 'label': 'Order',
+            'x': line_order_daily['Order Time'].tolist(), 'y': line_order_daily['Total Orders'].tolist()}
+    elif chart_type == 'order_monthly':
+        # generate revenue chart data
+        data = {
+            'status': 'success', 'title': 'Total Orders by Monthly', 'label': 'Order',
+            'x': line_order_monthly['Order Time'].tolist(), 'y': line_order_monthly['Total Orders'].tolist()}
 
     else:
         data = { 'status': 'fail', 'message': 'Unknown chart type' }
 
     return jsonify(data)
-
 
 """""""""""""""""
 index.html
