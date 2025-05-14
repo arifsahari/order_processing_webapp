@@ -1,0 +1,53 @@
+STATE,SEQ,STORE,COURIER,SHIPPER
+Labuan,16,WEB AB,ABX,ABX
+Sabah,16,WEB AB,ABX,ABX
+Sarawak,16,WEB AB,ABX,ABX
+Wilayah Persekutuan Labuan,16,WEB AB,ABX,ABX
+Singapore,17,WEB SF,SF,SF
+Johor,25,WEB NV,Ninjavan,Ninjavan
+Kedah,25,WEB NV,Ninjavan,Ninjavan
+Kelantan,25,WEB NV,Ninjavan,Ninjavan
+Melaka,25,WEB NV,Ninjavan,Ninjavan
+Negeri Sembilan,25,WEB NV,Ninjavan,Ninjavan
+Pahang,25,WEB NV,Ninjavan,Ninjavan
+Pulau Pinang,25,WEB NV,Ninjavan,Ninjavan
+Penang,25,WEB NV,Ninjavan,Ninjavan
+Perak,25,WEB NV,Ninjavan,Ninjavan
+Perlis,25,WEB NV,Ninjavan,Ninjavan
+Selangor,25,WEB NV,Ninjavan,Ninjavan
+Terengganu,25,WEB NV,Ninjavan,Ninjavan
+Wilayah Persekutuan Kuala Lumpur,25,WEB NV,Ninjavan,Ninjavan
+Kuala Lumpur,25,WEB NV,Ninjavan,Ninjavan
+Wilayah Persekutuan Putrajaya,25,WEB NV,Ninjavan,Ninjavan
+Putrajaya,25,WEB NV,Ninjavan,Ninjavan
+,40,WEB OS,DHL,DHL
+J&T Express,01,TIK,J&T,J&T Express
+Doorstep Delivery-SPX Express (West Malaysia),02,SHO,SPX,Doorstep Delivery-SPX Express (West Malaysia)
+SPX Express (West Malaysia),02,SHO,SPX,SPX Express (West Malaysia)
+Doorstep Delivery-SPX Express (East Malaysia),03,SHO,SPX,Doorstep Delivery-SPX Express (East Malaysia)
+SPX Express (East Malaysia),03,SHO,SPX,SPX Express (East Malaysia)
+Next Day Delivery-SPX Express (NDD),04,SHO,SPX,Next Day Delivery-SPX Express (NDD)
+SPX Express (NDD),04,SHO,SPX,SPX Express (NDD)
+2-Day Delivery-SPX Express (2DD),05,SHO,SPX,2-Day Delivery-SPX Express (2DD)
+SPX Express (2DD),05,SHO,SPX,SPX Express (2DD)
+Self Collection Point (SPX Express),06,SHO,SPX,Self Collection Point (SPX Express)
+Doorstep Delivery (Sea Shipping)-SPX Express (Sea Shipping),07,SHO,SPX,Doorstep Delivery (Sea Shipping)-SPX Express (Sea Shipping)
+SPX Express (Sea Shipping),07,SHO,SPX,SPX Express (Sea Shipping)
+Ninja Van Malaysia,20,TIK,Ninjavan,Ninja Van Malaysia
+Doorstep Delivery-Ninja Van,21,SHO,Ninjavan,Doorstep Delivery-Ninja Van
+Ninja Van,21,SHO,Ninjavan,Ninja Van
+Ninjavan MY MP,22,ZAL,Ninjavan,Ninjavan MY MP
+Ninja Van IDS MY to SG,23,ZAL,Ninjavan,Ninja Van IDS MY to SG
+Dropshipping,23,ZAL,Ninjavan,Dropshipping
+Flash Express Malaysia,26,TIK,Flash,Flash Express Malaysia
+Doorstep Delivery-Flash Express,26,SHO,Flash,Doorstep Delivery-Flash Express
+Flash Express,26,SHO,Flash,Flash Express
+Economy Delivery (Mail Drop)-POS Malaysia,27,SHO,Poslaju,Economy Delivery (Mail Drop)-POS Malaysia
+POS Malaysia,27,SHO,Poslaju,POS Malaysia
+Doorstep Delivery-Poslaju,28,SHO,Poslaju,Doorstep Delivery-Poslaju
+Poslaju,28,SHO,Poslaju,Poslaju
+BEST Cargo,35,SHO,Others,BEST Cargo
+City-Link Express,35,SHO,Others,City-Link Express
+Doorstep Delivery-DHL eCommerce,35,SHO,Others,Doorstep Delivery-DHL eCommerce
+GDEX,35,SHO,Others,GDEX
+LEX MY,36,LAZ,Others,LEX MY

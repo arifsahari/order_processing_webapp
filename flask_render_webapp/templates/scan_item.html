@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Barcode Scanning</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+</head>
+<body>
+    <div class="container mt-5">
+        <h3 class="mb-3">Scan Items</h3>
+        <hr>
+
+            <!-- Input Tracking Number -->
+            <!-- <div class='mb-3'>
+        <label for='trackingNumber' class='form-label'>Consignment #</label>
+        <input type='text' id='trackingNumber' class='form-control' onkeydown='checkEnter(event)'>
+        <button class='btn btn-primary mt-2' onclick='searchTracking()'>Search</button>
+    </div> -->
+
+            <!-- Table Result -->
+            <!-- <section>
+        <div class='mt-4'>
+            <table class='table table-bordered'>
+                <thead>
+                    <tr>
+                        <th>Order Number</th>
+                        <th>Product SKU</th>
+                        <th>Product Name</th>
+                        <th>Barcode</th>
+                        <th>SKU Quantity</th>
+                        <th>Total SKU Quantity</th>
+                    </tr>
+                </thead>
+                <tbody id='resultTable'></tbody>
+            </table>
+        </div>
+        </div>
+    </section> -->
+
+
+        <!-- Scan Barcode -->
+        <div class="mb-3">
+            <label for="barcodeInput" class="form-label">Scan Barcode</label>
+            <input type="text" id="barcodeInput" class="form-control">
+        </div>
+
+        <!-- Table Display Order Items -->
+        <div class="mt-4">
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>Product SKU</th>
+                        <th>Product Name</th>
+                        <th>Barcode</th>
+                        <th>SKU Quantity</th>
+                        <th>Scanned</th>
+                    </tr>
+                </thead>
+                <tbody id="resultTable"></tbody>
+            </table>
+        </div>
+
+        <!-- Counter -->
+        <div>
+            <p>✅ Correct Scans: <span id="correctCount">0</span></p>
+            <p>❌ Incorrect Scans: <span id="incorrectCount">0</span></p>
+        </div>
+    </div>
+
+    <script>
+        let trackingNumber = new URLSearchParams(window.location.search).get("tracking");
+        let correctCount = 0, incorrectCount = 0;
+        let orderItems = [];
+
+        // Fetch Order Items for the Given Tracking Number
+        fetch(`/get_items?tracking=${trackingNumber}`)
+        .then(response => response.json())
+        .then(data => {
+            orderItems = data.items;
+            let table = document.getElementById("resultTable");
+            table.innerHTML = "";
+
+            orderItems.forEach(row => {
+                let tr = `<tr id="row-${row.barcode}">
+                    <td>${row["SKU Code"]}</td>
+                    <td>${row["Product Name"]}</td>
+                    <td>${row["Barcode ID"]}</td>
+                    <td>${row["SKU Qty"]}</td>
+                    <td class="scanned">0</td>
+                </tr>`;
+                table.innerHTML += tr;
+            });
+
+            document.getElementById("barcodeInput").focus();
+        });
+
+        document.getElementById("barcodeInput").addEventListener("keydown", function(event) {
+            if (event.key === "Enter") {
+                let scannedBarcode = this.value.trim();
+                let found = orderItems.find(item => item["Barcode ID"] === scannedBarcode);
+
+                if (found) {
+                    let row = document.getElementById(`row-${scannedBarcode}`);
+                    let scannedCell = row.querySelector(".scanned");
+                    let scannedCount = parseInt(scannedCell.innerText);
+
+                    if (scannedCount < found["SKU Qty"]) {
+                        scannedCell.innerText = scannedCount + 1;
+                        correctCount++;
+                        document.getElementById("correctCount").innerText = correctCount;
+                    }
+                } else {
+                    incorrectCount++;
+                    document.getElementById("incorrectCount").innerText = incorrectCount;
+                }
+
+                // Reset input
+                this.value = "";
+                this.focus();
+
+                // Check if all items are scanned
+                let allMatched = orderItems.every(item => {
+                    let row = document.getElementById(`row-${item["Barcode ID"]}`);
+                    return parseInt(row.querySelector(".scanned").innerText) === item["SKU Qty"];
+                });
+
+                if (allMatched) {
+                    setTimeout(() => alert("✅ All items scanned!"), 200);
+                }
+            }
+        });
+    </script>
+</body>
+</html>

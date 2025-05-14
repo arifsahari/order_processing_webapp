@@ -1,0 +1,26 @@
+{% extends 'index.html' %}
+{% block content %}
+    <h4>Processed Files</h4>
+    <section>
+        <ul id='fileList'>
+            {% for file in files %}
+            <li>
+                {{ file }}
+                <a href='{{ url_for("download_file", filename=file) }}' download>Download</a>
+                <button onclick='deleteFile("{{ file }}")'>Delete</button>
+            </li>
+            {% endfor %}
+        </ul>
+    </section>
+
+    <script>
+    function deleteFile(filename) {
+        if (confirm('Are you sure you want to delete ' + filename + '?')) {
+            $.post('/delete_file/' + filename, function(response) {
+                alert(response.message);
+                location.reload();
+            });
+        }
+    }
+    </script>
+{% endblock %}

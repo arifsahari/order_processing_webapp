@@ -1,0 +1,60 @@
+{% extends "index.html" %}
+{% block content %}
+    <h4>Uploaded Files</h4>
+    <br>
+    <!-- <section>
+        <div>
+        <ul id="fileList">
+            {% for file in files %}
+            <li>
+                {{ file }}
+                <button onclick="deleteFile('{{ file }}')">Delete</button>
+            </li>
+            {% endfor %}
+        </ul>
+        </div>
+    </section> -->
+
+        <!-- <h5>Files in Default (uploads)</h5>
+        <ul>
+            {% for file in categorized_files['upload'] %}
+            <li>
+                {{ file }}
+                <button onclick="deleteFile('{{ file }}')">Delete</button>
+            </li>
+            {% endfor %}
+        </ul> -->
+
+        {% for folder, files in categorized_files.items() %}
+        {% if folder != 'upload' %}
+        <section>
+            <div>
+                <h5>Files in {{ folder|upper }} </h5>
+                <ul>
+                    {% for file in files %}
+                    <li class='list-gap' >
+                    <!-- <li class='text-break mx-auto w-100' > -->
+                    <!-- <li> -->
+                        {{ file }}
+                        <button class='rightside-button'  onclick="deleteFile('{{ folder }}/{{ file }}')">Delete</button>
+                        <!-- <button onclick="deleteFile('{{ folder }}/{{ file }}')">Delete</button> -->
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </section>
+        {% endif %}
+        {% endfor %}
+
+
+    <script>
+    function deleteFile(filename) {
+        if (confirm("Are you sure you want to delete " + filename + "?")) {
+            $.post("/delete_file/" + filename, function(response) {
+                alert(response.message);
+                location.reload();
+            });
+        }
+    }
+    </script>
+{% endblock %}
