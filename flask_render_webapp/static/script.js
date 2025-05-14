@@ -457,83 +457,82 @@ function loadTable() {
 function printTable(listType) {
     let batchDropdown = document.getElementById('batchListDropdown');
     let selectedBatch = batchDropdown && batchDropdown ? parseInt(batchDropdown.value) : 0;
-    let selectedName = getCheckedValues('filterStores');
     // let selectedBatch = batchDropdown ? parseInt(batchDropdown.value) : 0;
 
     fetch(`/print_table/${listType}?batch=${selectedBatch}`)
-    .then(response => response.json())
-    .then(result => {
-        if (!result || !Array.isArray(result.data)) {
-            alert('Invalid print data format.');
-            console.error('Response:', result);
-            return;
-        }
+        .then(response => response.json())
+        .then(result => {
+            if (!result || !Array.isArray(result.data)) {
+                alert('Invalid print data format.');
+                console.error('Response:', result);
+                return;
+            }
 
-        let columns = result.columns;
-        let data = result.data;
+            let columns = result.columns;
+            let data = result.data;
 
-        if (data.length === 0) {
-            alert('No data found for selected batch.');
-            return;
-        }
+            if (data.length === 0) {
+                alert('No data found for selected batch.');
+                return;
+            }
 
-        let today = new Date();
-        let dateStr = today.toLocaleDateString('en-MY'); // DD/MM/YYYY
+            let today = new Date();
+            let dateStr = today.toLocaleDateString('en-MY'); // DD/MM/YYYY
 
-        let totalQty = data.reduce((sum, row) => {
-            let qtyKey = Object.keys(row).find(k => k.toLowerCase() === ('qty') || k.toLowerCase() === ('quantity'));
-            return sum + (parseInt(row[qtyKey]) || 0);
-        }, 0);
+            let totalQty = data.reduce((sum, row) => {
+                let qtyKey = Object.keys(row).find(k => k.toLowerCase() === ('qty') || k.toLowerCase() === ('quantity'));
+                return sum + (parseInt(row[qtyKey]) || 0);
+            }, 0);
 
-        let table = document.createElement('table');
-        table.className = listType + '-table';
+            let table = document.createElement('table');
+            table.className = listType + '-table';
 
-        // Header
-        let thead = document.createElement('thead');
+            // Header
+            let thead = document.createElement('thead');
 
-        let customHeaderRow = document.createElement('tr');
-        let customHeaderCell = document.createElement('th');
-        customHeaderCell.colSpan = columns.length;
-        customHeaderCell.className = 'custom-header-row';
-        // customHeaderCell.innerText = `${listType.toUpperCase()} - Batch ${selectedBatch}`;
-        customHeaderCell.innerText = `${listType.toUpperCase()} ${dateStr} : ${selectedBatch} (${totalQty} item)`;
+            let customHeaderRow = document.createElement('tr');
+            let customHeaderCell = document.createElement('th');
+            customHeaderCell.colSpan = columns.length;
+            customHeaderCell.className = 'custom-header-row';
+            // customHeaderCell.innerText = `${listType.toUpperCase()} - Batch ${selectedBatch}`;
+            customHeaderCell.innerText = `${listType.toUpperCase()} ${dateStr} : ${selectedBatch} (${totalQty} item)`;
 
-        customHeaderRow.appendChild(customHeaderCell);
-        thead.appendChild(customHeaderRow);
+            customHeaderRow.appendChild(customHeaderCell);
+            thead.appendChild(customHeaderRow);
 
-        // Nama Kolum
-        let headerRow = document.createElement('tr');
-        columns.forEach(col => {
-            let th = document.createElement('th');
-            th.innerText = col;
-            headerRow.appendChild(th);
-        });
-        thead.appendChild(headerRow);
-        table.appendChild(thead);
-
-        // Kolum Body
-        let tbody = document.createElement('tbody');
-        data.forEach(row => {
-            let tr = document.createElement('tr');
-            columns.forEach((col, index) => {
-                let td = document.createElement('td');
-                td.innerText = row[col];
-
-                // Tebalkan & warnakan kalau QTY > 1
-                let headerText = col.toLowerCase();
-                if ((headerText.includes('qty') || headerText.includes('quantity')) && parseInt(row[col]) > 1) {
-                    td.style.fontWeight = 'bold';
-                    td.style.backgroundColor = '#ffcccb';  // Merah lembut
-                }
-
-                tr.appendChild(td);
+            // Nama Kolum
+            let headerRow = document.createElement('tr');
+            columns.forEach(col => {
+                let th = document.createElement('th');
+                th.innerText = col;
+                headerRow.appendChild(th);
             });
-            tbody.appendChild(tr);
-        });
-        table.appendChild(tbody);
+            thead.appendChild(headerRow);
+            table.appendChild(thead);
 
-        // Styling print
-        let style = `
+            // Kolum Body
+            let tbody = document.createElement('tbody');
+            data.forEach(row => {
+                let tr = document.createElement('tr');
+                columns.forEach((col, index) => {
+                    let td = document.createElement('td');
+                    td.innerText = row[col];
+
+                    // Tebalkan & warnakan kalau QTY > 1
+                    let headerText = col.toLowerCase();
+                    if ((headerText.includes('qty') || headerText.includes('quantity')) && parseInt(row[col]) > 1) {
+                        td.style.fontWeight = 'bold';
+                        td.style.backgroundColor = '#ffcccb';  // Merah lembut
+                    }
+
+                    tr.appendChild(td);
+                });
+                tbody.appendChild(tr);
+            });
+            table.appendChild(tbody);
+
+            // Styling print
+            let style = `
             <style>
                 @page { size: A4; margin: 20px 15px; margin-bottom: 15px; }
 
@@ -587,6 +586,10 @@ function printTable(listType) {
                                          font-size: 12px; font-weight: normal; text-align:
                                          left;
                                          padding-bottom: 15px !important; }
+
+                    td[data-quantity]:not([data-quantity="1"]) {
+                        font-weight: bold; background-color: #ffcccb; }
+
                 }
 
                 .picklist-table th:nth-child(1), .picklist-table td:nth-child(1) { width: 3%; }
@@ -605,18 +608,18 @@ function printTable(listType) {
             </style>
         `;
 
-        let printWindow = window.open('', '', 'width=2000,height=1000');
-        // printWindow.document.write('<html><head><title>Print Table</title>' + style + '</head><body>');
-        printWindow.document.write(`<html><head><title>${customHeaderCell.innerText}</title>${style}</head><body>`);
-        printWindow.document.write(table.outerHTML);
-        printWindow.document.write('</body></html>');
-        printWindow.document.close();
-        printWindow.print();
-    })
-    .catch(error => {
-        alert('Failed to print table.');
-        console.error('Print Error:', error);
-    });
+            let printWindow = window.open('', '', 'width=2000,height=1000');
+            // printWindow.document.write('<html><head><title>Print Table</title>' + style + '</head><body>');
+            printWindow.document.write(`<html><head><title>${customHeaderCell.innerText}</title>${style}</head><body>`);
+            printWindow.document.write(table.outerHTML);
+            printWindow.document.write('</body></html>');
+            printWindow.document.close();
+            printWindow.print();
+        })
+        .catch(error => {
+            alert('Failed to print table.');
+            console.error('Print Error:', error);
+        });
 }
 // ------------------------------
 
@@ -655,7 +658,7 @@ function exportFile() {
             console.error('Export error:', error);
             if (retryCount < 5) { // Retry maximum 5 times
                 retryCount++;
-                console.log(`🔄 Retrying exportFile (${retryCount})`);
+                console.log(`Retrying exportFile (${retryCount})`);
                 setTimeout(attemptExport, 1000);
             } else {
                 alert('Export failed after multiple attempts: ' + error);
@@ -746,8 +749,9 @@ function exportFile() {
 // }
 
 
-
 // ------------------------------
+// Index : Load Chart
+
 // document.getElementById('chartSelector').addEventListener('change', function () {
 //     const selected = this.value;
 //     loadChart(selected);  // ➜ pass selected option
@@ -760,7 +764,6 @@ document.getElementById('chartSelector').addEventListener('change', function () 
     loadChart(chartType, dataType); // pass dua benda: jenis & data
     document.getElementById('chartSelector').value = '';
 });
-
 
 
 function loadChart(chartType = 'bar', dataType = 'order_summary') {
@@ -787,16 +790,20 @@ function loadChart(chartType = 'bar', dataType = 'order_summary') {
 
             // Generate new chart
             window.orderChart = new Chart(ctx, {
+                type: chartType,
                 plugins: [ChartDataLabels],
                 data: {
                     labels: data.x,
                     datasets: [{
-                        type: 'bar',
+                        // type: 'bar',
+
                         label: data.label || 'Data',
                         data: data.y,
                         backgroundColor: colors,
                         borderColor: 'grey',
-                        borderWidth: 2
+                        borderWidth: 2,
+                        fill: chartType === 'line' ? false : true,
+                        tension: 0.3 // smooth line
                     }]
                 },
                 options: {
@@ -806,6 +813,8 @@ function loadChart(chartType = 'bar', dataType = 'order_summary') {
                     responsive: true,
                     scales: {
                         x: {
+                            // type: data.time ? 'time' : 'category',
+                            // time: data.time ? { unit: 'day' } : undefined,
                             grid: { color: 'grey', lineWidth: 1 },
                             border: { color: 'black', width: 2 },
                             beginAtZero: true,
@@ -817,9 +826,10 @@ function loadChart(chartType = 'bar', dataType = 'order_summary') {
                             ticks: { font: { size: 14, weight: 'bold' }, color: 'black' }
                         }
                     },
-                    layout: { padding: { right: 20, left: 0 }, borderWidth: 1 },
+                    layout: { padding: { right: 30, left: 0 }, borderWidth: 1 },
                     plugins: {
                         datalabels: {
+                            display: chartType !== 'line',
                             anchor: 'end',
                             align: 'right',
                             color: 'black',
@@ -840,7 +850,6 @@ function loadChart(chartType = 'bar', dataType = 'order_summary') {
             });
         });
 }
-
 
 
 
