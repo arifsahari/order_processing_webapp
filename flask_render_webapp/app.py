@@ -162,11 +162,11 @@ def upload_file():
     return jsonify({'success': False, 'message': 'Invalid file format'})
 
 
-# Endpoint : Download files
-@app.route('/download', methods=['GET'])
-def download_file():
-    files = os.listdir(EXPORT_FOLDER)
-    return render_template('download.html', files=files)
+# # Endpoint : Download files
+# @app.route('/download', methods=['GET'])
+# def download_file():
+#     files = os.listdir(EXPORT_FOLDER)
+#     return render_template('download.html', files=files)
 
 
 """""""""""""""""
@@ -699,27 +699,36 @@ def delete_file(folder, filename):
 """""""""""""""""
 download.html
 """""""""""""""""
-# @app.route('/download', methods=['GET'])
-# def download_files():
-#     categorized_files = {}
+@app.route('/download', methods=['GET'])
+def list_download():
+    categorized_files = {}
 
-#     default_files = [
-#         f for f in os.listdir(EXPORT_FOLDER)
-#         if os.path.isfile(os.path.join(EXPORT_FOLDER, f)) and allowed_file(f)
-#     ]
-#     categorized_files['default'] = default_files
+    default_files = [
+        f for f in os.listdir(EXPORT_FOLDER)
+        if os.path.isfile(os.path.join(EXPORT_FOLDER, f)) and allowed_file(f)
+    ]
+    categorized_files['default'] = default_files
 
-#     for folder_name in os.listdir(EXPORT_FOLDER):
-#         folder_path = os.path.join(EXPORT_FOLDER, folder_name)
+    for folder_name in os.listdir(EXPORT_FOLDER):
+        folder_path = os.path.join(EXPORT_FOLDER, folder_name)
 
-#         if os.path.isdir(folder_path):
-#             sub_files = [
-#                 f for f in os.listdir(folder_path)
-#                 if os.path.isfile(os.path.join(folder_path, f)) and allowed_file(f)
-#             ]
-#             categorized_files[folder_name] = sub_files
+        if os.path.isdir(folder_path):
+            sub_files = [
+                f for f in os.listdir(folder_path)
+                if os.path.isfile(os.path.join(folder_path, f)) and allowed_file(f)
+            ]
+            categorized_files[folder_name] = sub_files
 
-#     return render_template('download.html', categorized_files=categorized_files)
+    return render_template('download.html', categorized_files=categorized_files)
+
+
+@app.route('/delete_download/<filename>', methods=['POST'])
+def delete_download(filename):
+    file_path = os.path.join(EXPORT_FOLDER, filename)
+    if os.path.exists(file_path):
+        os.remove(file_path)
+        return jsonify({'status': 'success', 'message': f'File {filename} deleted'})
+    return jsonify({'status': 'error', 'message': 'File not found'}), 404
 
 
 """""""""""""""""
