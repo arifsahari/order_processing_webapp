@@ -695,17 +695,17 @@ def list_files():
 """""""""""""""""
 list_download.html
 """""""""""""""""
-# # Endpoint : Download exported files
-# @app.route('/download', methods=['GET'])
-# def list_download():
-#     files = os.listdir(EXPORT_FOLDER)
-#     return render_template('list_download.html', files=files)
-
-# Endpoint : Download checkpoint files
+# Endpoint : Download exported files
 @app.route('/download', methods=['GET'])
 def list_download():
-    files = os.listdir(DOWNLOAD_FOLDER)
+    files = os.listdir(EXPORT_FOLDER)
     return render_template('list_download.html', files=files)
+
+# # Endpoint : Download checkpoint files
+# @app.route('/checkpoint', methods=['GET'])
+# def list_checkpoint():
+#     files = os.listdir(DOWNLOAD_FOLDER)
+#     return render_template('list_checkpoint.html', files=files)
 
 
 
