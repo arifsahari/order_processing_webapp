@@ -1,5 +1,35 @@
 /* style.css */
 
+
+/* --------------------- */
+/* Universal Fonts */
+/* --------------------- */
+@font-face {
+  font-family: 'Carlito';
+  src: url('/static/fonts/Carlito.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Calibri';
+  src: url('/static/fonts/Calibri.woff2') format('woff2');
+  font-weight: normal;
+}
+
+@font-face {
+  font-family: 'Calibri';
+  src: url('/static/fonts/Calibri-Bold.woff2') format('woff2');
+  font-weight: bold;
+}
+
+* {
+  font-family: 'Calibri', 'Carlito', sans-serif !important;
+}
+
+/* ----------- End ---------- */
+
+
 /* --------------------- */
 /* Index Page */
 /* --------------------- */
