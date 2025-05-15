@@ -45,25 +45,35 @@
     {% endif %}
     {% endfor %} -->
 
-    <table>
-        <thead>
-            <tr>
-                <th>Nama Fail</th>
-                <th style="text-align:right;">Tindakan</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for file in files %}
-            <tr>
-                <td style="width: 100%;">{{ file }}</td>
-                <td style="text-align: right; white-space: nowrap;">
-                    <button onclick="downloadFile('uploads', '{{ file }}')">Download</button>
-                    <button onclick="deleteFile('uploads', '{{ file }}')">Delete</button>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+
+    {% for folder, files in categorized_files.items() %}
+    {% if folder != 'upload' %}
+    <section>
+        <div>
+            <h5>Files in {{ folder|upper }} </h5>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Nama Fail</th>
+                        <th style="text-align:right;">Tindakan</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for file in files %}
+                    <tr>
+                        <td style="width: 100%;">{{ file }}</td>
+                        <td style="text-align: right; white-space: nowrap;">
+                            <button onclick="downloadFile('uploads', '{{ file }}')">Download</button>
+                            <button onclick="deleteFile('uploads', '{{ file }}')">Delete</button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+    {% endif %}
+    {% endfor %}
 
 
     <script src="{{ url_for('static', filename='list.js') }}"></script>
