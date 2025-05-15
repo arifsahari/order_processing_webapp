@@ -692,11 +692,19 @@ def list_files():
 """""""""""""""""
 list_download.html
 """""""""""""""""
+# # Endpoint : Download exported files
+# @app.route('/download', methods=['GET'])
+# def list_download():
+#     files = os.listdir(EXPORT_FOLDER)
+#     return render_template('list_download.html', files=files)
+
+# Endpoint : Download checkpoint files
 @app.route('/download', methods=['GET'])
-def list_download():
-    files = os.listdir(EXPORT_FOLDER)
-    return render_template('list_download.html', files=files)
-    
+def download_file():
+    files = os.listdir(DOWNLOAD_FOLDER)
+    return render_template('download.html', files=files)
+
+
 
 """""""""""""""""
 list_download.html & list_file.html
