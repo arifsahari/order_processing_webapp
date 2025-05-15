@@ -2,35 +2,8 @@
 {% block content %}
     <h4>Uploaded Files</h4>
     <br>
-    <!-- <section>
-        <div>
-        <ul id="fileList">
-            {% for file in files %}
-            <li>
-                {{ file }}
-                <button onclick="deleteFile('{{ file }}')">Delete</button>
-            </li>
-            {% endfor %}
-        </ul>
-        </div>
-    </section> -->
 
-        <!-- <h5>Files in Default (uploads)</h5>
-        <ul>
-            {% for file in categorized_files['upload'] %}
-            <li>
-                {{ file }}
-                <button onclick="deleteFile('{{ file }}')">Delete</button>
-            </li>
-            {% endfor %}
-        </ul> -->
-<!-- 
-    {% for folder, files in categorized_files.items() %}
-    {% if folder != 'upload' %}
-    <section>
-        <div>
-            <h5>Files in {{ folder|upper }} </h5>
-            <ul>
+<!--             <ul>
                 {% for file in files %}
                 <li class='list-gap' >
                 <li class='text-break mx-auto w-100' >
@@ -39,12 +12,7 @@
                     <button onclick="deleteFile('{{ folder }}/{{ file }}')">Delete</button>
                 </li>
                 {% endfor %}
-            </ul>
-        </div>
-    </section>
-    {% endif %}
-    {% endfor %} -->
-
+            </ul> -->
 
     {% for folder, files in categorized_files.items() %}
     {% if folder != 'upload' %}
@@ -54,15 +22,15 @@
             <table>
                 <thead>
                     <tr>
-                        <th>Nama Fail</th>
-                        <th style="text-align:right;">Tindakan</th>
+                        <th>Filename</th>
+                        <th style='text-align:right;'>Action</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for file in files %}
                     <tr>
-                        <td style="width: 100%;">{{ file }}</td>
-                        <td style="text-align: right; white-space: nowrap;">
+                        <td class='text-break mx-auto w-100' style='width: 100%;'>{{ file }}</td>
+                        <td style='text-align: right; white-space: nowrap;'>
                             <button onclick="downloadFile('uploads', '{{ file }}')">Download</button>
                             <button onclick="deleteFile('uploads', '{{ file }}')">Delete</button>
                         </td>
@@ -75,17 +43,8 @@
     {% endif %}
     {% endfor %}
 
-
     <script src="{{ url_for('static', filename='list.js') }}"></script>
 
 <!--     <script>
-    function deleteFile(filename) {
-        if (confirm("Are you sure you want to delete " + filename + "?")) {
-            $.post("/delete_file/" + filename, function(response) {
-                alert(response.message);
-                location.reload();
-            });
-        }
-    }
     </script> -->
 {% endblock %}
