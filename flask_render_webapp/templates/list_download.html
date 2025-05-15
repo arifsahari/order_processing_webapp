@@ -28,8 +28,10 @@
                     <tr>
                         <td style="width: 100%;">{{ file }}</td>
                         <td style="text-align: right; white-space: nowrap;">
-                            <button onclick="downloadFile('exports', '{{ file }}')">Download</button>
-                            <button onclick="deleteFile('exports', '{{ file }}')">Delete</button>
+<!--                             <button onclick="downloadFile('exports', '{{ file }}')">Download</button>
+                            <button onclick="deleteFile('exports', '{{ file }}')">Delete</button -->
+                            <button onclick="downloadFile('downloads', '{{ file }}')">Download</button>
+                            <button onclick="deleteFile('downloads', '{{ file }}')">Delete</button>
                         </td>
                     </tr>
                     {% endfor %}
