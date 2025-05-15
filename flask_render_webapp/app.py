@@ -53,6 +53,9 @@ DF_MASTER = pd.DataFrame(mapper.master.get_master_data()).copy()
 SHIPPER = pd.DataFrame(mapper.mapper_data.get_courier_state_data()).copy()
 SIZE = pd.DataFrame(mapper.mapper_data.get_size_data()).copy()
 
+# Variables
+FILTER = None
+BATCH = None
 
 # Create folder to contain files
 if not os.path.exists(UPLOAD_FOLDER):
@@ -282,7 +285,7 @@ Endpoint for List Generation
 # Endpoint : Generate data after filtered
 @app.route('/list', methods=['POST'])
 def process_generate_list():
-    global FILTER, PL, OL, DO
+    global FILTER
     data = request.get_json()
     print(f'{process_generate_list.__name__} : Received Data: {data}')
     if not data:
