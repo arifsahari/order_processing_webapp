@@ -700,9 +700,9 @@ list_download.html
 
 # Endpoint : Download checkpoint files
 @app.route('/download', methods=['GET'])
-def download_file():
+def list_download():
     files = os.listdir(DOWNLOAD_FOLDER)
-    return render_template('download.html', files=files)
+    return render_template('list_download.html', files=files)
 
 
 
