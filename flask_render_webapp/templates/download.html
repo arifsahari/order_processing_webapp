@@ -3,33 +3,45 @@
     <h4>Downloadable Files</h4>
     <br>
 
-    {% for folder, files in categorized_files.items() %}
-    {% if folder != 'upload' %}
     <section>
         <div>
-            <ul>
+<!--             <ul>
                 {% for file in download %}
                 <li>
                     {{ file }}
-    <!--                 <a href='{{ url_for("download_file", filename=file) }}' download>Download</a> -->
+                    <a href='{{ url_for("download_file", filename=file) }}' download>Download</a>
                     <button onclick="window.location.href='{{ file.url }}'">Download</button>
                     <button onclick='deleteFile("{{ file }}")'>Delete</button>
                 </li>
                 {% endfor %}
-            </ul>
+            </ul> -->
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th>Nama Fail</th>
+                        <th style="text-align:right;">Tindakan</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for file in files %}
+                    <tr>
+                        <td style="width: 100%;">{{ file }}</td>
+                        <td style="text-align: right; white-space: nowrap;">
+                            <button onclick="downloadFile('exports', '{{ file }}')">Download</button>
+                            <button onclick="deleteFile('exports', '{{ file }}')">Delete</button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+
+            
         </div>
     </section>
-    {% endif %}
-    {% endfor %}
+    <script src="{{ url_for('static', filename='list.js') }}"></script>
+<!--     <script>
 
-    <script>
-    function deleteFile(filename) {
-        if (confirm('Are you sure you want to delete ' + filename + '?')) {
-            $.post('/delete_file/' + filename, function(response) {
-                alert(response.message);
-                location.reload();
-            });
-        }
-    }
-    </script>
+    </script> -->
 {% endblock %}
