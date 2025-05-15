@@ -667,26 +667,6 @@ def list_files():
 
     return render_template('list_file.html', categorized_files=categorized_files)
 
-# @app.route('/files', methods=['GET'])
-# def list_files():
-#     files = os.listdir(UPLOAD_FOLDER)
-#     return render_template('list_file.html', files=files)
-
-
-# Route untuk delete fail
-@app.route('/delete_file/<folder>/<filename>', methods=['POST'])
-def delete_file(folder, filename):
-    if folder == 'default':
-        file_path = os.path.join(UPLOAD_FOLDER, filename)
-    else:
-        file_path = os.path.join(UPLOAD_FOLDER, folder, filename)
-
-    if os.path.exists(file_path):
-        os.remove(file_path)
-        return jsonify({'status': 'success', 'message': f'File {filename} deleted from {folder} folder'})
-    return jsonify({'status': 'error', 'message': f'File {filename} not found in {folder} folder'}), 404
-
-
 # @app.route('/delete_file/<filename>', methods=['POST'])
 # def delete_file(filename):
 #     file_path = os.path.join(UPLOAD_FOLDER, filename)
@@ -695,40 +675,74 @@ def delete_file(folder, filename):
 #         return jsonify({'status': 'success', 'message': f'File {filename} deleted'})
 #     return jsonify({'status': 'error', 'message': 'File not found'}), 404
 
+# # Route untuk delete fail
+# @app.route('/delete_file/<folder>/<filename>', methods=['POST'])
+# def delete_file(folder, filename):
+#     if folder == 'default':
+#         file_path = os.path.join(UPLOAD_FOLDER, filename)
+#     else:
+#         file_path = os.path.join(UPLOAD_FOLDER, folder, filename)
+
+#     if os.path.exists(file_path):
+#         os.remove(file_path)
+#         return jsonify({'status': 'success', 'message': f'File {filename} deleted from {folder} folder'})
+#     return jsonify({'status': 'error', 'message': f'File {filename} not found in {folder} folder'}), 404
+
 
 """""""""""""""""
-download.html
+list_download.html
 """""""""""""""""
 @app.route('/download', methods=['GET'])
 def list_download():
-    categorized_files = {}
+    files = os.listdir(EXPORT_FOLDER)
+    return render_template('list_download.html', files=files)
+    
 
-    default_files = [
-        f for f in os.listdir(EXPORT_FOLDER)
-        if os.path.isfile(os.path.join(EXPORT_FOLDER, f)) and allowed_file(f)
-    ]
-    categorized_files['default'] = default_files
+"""""""""""""""""
+list_download.html & list_file.html
+"""""""""""""""""
+@app.route('/delete_file/<folder>/<path:filename>', methods=['POST'])
+def delete_file(folder, filename):
+    folder_map = {
+        'uploads': UPLOAD_FOLDER,
+        'downloads': DOWNLOAD_FOLDER,
+        'exports': EXPORT_FOLDER
+    }
 
-    for folder_name in os.listdir(EXPORT_FOLDER):
-        folder_path = os.path.join(EXPORT_FOLDER, folder_name)
+    base_folder = folder_map.get(folder)
+    if not base_folder:
+        return jsonify({'success': False, 'message': 'Invalid folder'}), 400
 
-        if os.path.isdir(folder_path):
-            sub_files = [
-                f for f in os.listdir(folder_path)
-                if os.path.isfile(os.path.join(folder_path, f)) and allowed_file(f)
-            ]
-            categorized_files[folder_name] = sub_files
+    file_path = os.path.join(base_folder, filename)
 
-    return render_template('download.html', categorized_files=categorized_files)
+    if not os.path.exists(file_path):
+        return jsonify({'success': False, 'message': 'File not found'}), 404
 
-
-@app.route('/delete_download/<filename>', methods=['POST'])
-def delete_download(filename):
-    file_path = os.path.join(EXPORT_FOLDER, filename)
-    if os.path.exists(file_path):
+    try:
         os.remove(file_path)
-        return jsonify({'status': 'success', 'message': f'File {filename} deleted'})
-    return jsonify({'status': 'error', 'message': 'File not found'}), 404
+        return jsonify({'success': True, 'message': 'File deleted successfully'})
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'Failed to delete: {str(e)}'}), 500
+
+
+@app.route('/download_file/<folder>/<path:filename>')
+def download_file(folder, filename):
+    folder_map = {
+        'uploads': UPLOAD_FOLDER,
+        'downloads': DOWNLOAD_FOLDER,
+        'exports': EXPORT_FOLDER
+    }
+
+    base_folder = folder_map.get(folder)
+    if not base_folder:
+        return 'Invalid folder', 400
+
+    file_path = os.path.join(base_folder, filename)
+
+    if not os.path.isfile(file_path):
+        return 'File not found', 404
+
+    return send_file(file_path, as_attachment=True)
 
 
 """""""""""""""""
