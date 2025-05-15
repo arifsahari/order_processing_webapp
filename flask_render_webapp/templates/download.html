@@ -1,19 +1,26 @@
-{% extends 'index.html' %}
+{% extends "index.html" %}
 {% block content %}
     <h4>Processed Files</h4
     <br>
+
+    {% for folder, files in categorized_files.items() %}
+    {% if folder != 'upload' %}
     <section>
-        <ul>
-            {% for file in download %}
-            <li>
-                {{ file }}
-<!--                 <a href='{{ url_for("download_file", filename=file) }}' download>Download</a> -->
-                <button onclick="window.location.href='{{ file.url }}'">Download</button>
-                <button onclick='deleteFile("{{ file }}")'>Delete</button>
-            </li>
-            {% endfor %}
-        </ul>
+        <div>
+            <ul>
+                {% for file in download %}
+                <li>
+                    {{ file }}
+    <!--                 <a href='{{ url_for("download_file", filename=file) }}' download>Download</a> -->
+                    <button onclick="window.location.href='{{ file.url }}'">Download</button>
+                    <button onclick='deleteFile("{{ file }}")'>Delete</button>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
     </section>
+    {% endif %}
+    {% endfor %}
 
     <script>
     function deleteFile(filename) {
