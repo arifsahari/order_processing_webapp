@@ -19,17 +19,19 @@
             <table>
                 <thead>
                     <tr>
-                        <th>Filename</th>
-                        <th style='text-align:right;'>Action</th>
+                        <th class='list-table-th-l'>Filename</th>
+                        <th  class='list-table-th-r'>Action</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for file in files %}
                     <tr>
-                        <td class='text-break mx-auto w-100' style='width: 100%;'>{{ file }}</td>
-                        <td style='text-align: right; white-space: nowrap;'>
-                            <button onclick="downloadFile('exports', '{{ file }}')">Download</button>
-                            <button onclick="deleteFile('exports', '{{ file }}')">Delete</button>
+                        <td class='list-table-td-l'>{{ file }}</td>
+                        <td class='list-table-td-r'>
+                            <div class='d-inline-flex flex-wrap justify-content-end gap-1'>
+                                <button onclick="downloadFile('exports', '{{ file }}')">Download</button>
+                                <button onclick="deleteFile('exports', '{{ file }}')">Delete</button>
+                            </div>
                         </td>
                     </tr>
                     {% endfor %}
