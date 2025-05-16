@@ -303,6 +303,30 @@ footer {
         width: 200px;
     }
 }
+
+.list-table-th-l {
+    width: 65%;
+}
+
+.list-table-th-r {
+    width: 35%;
+    text-align: right;
+}
+
+.list-table-td-l {
+    max-width: 300px;
+    white-space: normal;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    display:  block;
+}
+
+.list-table-td-r {
+    text-align: right;
+    white-space: nowrap;
+}
+
+
 /* ----------- End ---------- */
 
 
