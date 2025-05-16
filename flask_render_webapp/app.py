@@ -737,7 +737,7 @@ list_download.html
 @app.route('/download', methods=['GET'])
 def list_download():
     files = os.listdir(EXPORT_FOLDER)
-    return render_template('list_download.html', files=files)
+    return render_template('list_download.html', files=sorted(files))
 
 # # Endpoint : Download checkpoint files
 # @app.route('/checkpoint', methods=['GET'])
