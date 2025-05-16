@@ -414,6 +414,43 @@ def print_table_data(list_type):
 Endpoint for Data Viewing
 """""""""""""""""
 # Endpoint : View data after filtered
+@app.route('/view_data/<folder>/<path:filename>', methods=['GET'])
+def view_data(folder, filename):
+    base_folder = {
+        'uploads': UPLOAD_FOLDER,
+        'downloads': DOWNLOAD_FOLDER,
+        'exports': EXPORT_FOLDER
+    }.get(folder)
+
+    if not base_folder:
+        return jsonify([])
+
+    file_path = os.path.join(base_folder, filename)
+    if not os.path.exists(file_path):
+        return jsonify([])
+
+    try:
+        # Baca ikut extension fail
+        if filename.endswith('.csv'):
+            df = pd.read_csv(file_path, encoding='utf-8')
+        elif filename.endswith('.xlsx'):
+            df = pd.read_excel(file_path)
+        else:
+            return jsonify({'error': 'File type not supported'})
+
+        batch = request.args.get('batch')
+
+        # Optional filter if filename related to batch
+        if filename.startswith('picklist') or filename.startswith('orderlist'):
+            if batch and 'Batch' in df.columns:
+                df = df[df['Batch'] == int(batch)]
+
+        return df.to_json(orient='records')
+    except Exception as e:
+        print(f'{view_data.__name__} : Error loading {filename}: {str(e)}')
+        return jsonify({'error': str(e)})
+
+"""
 @app.route('/view_data/<filename>', methods=['GET'])
 def view_data(filename):
     file_path = os.path.join(DOWNLOAD_FOLDER, filename)
@@ -432,6 +469,7 @@ def view_data(filename):
     except Exception as e:
         print(f'{view_data.__name__} : Error loading {filename}: {str(e)}')
         return jsonify([])
+"""
 
 
 """""""""""""""""
