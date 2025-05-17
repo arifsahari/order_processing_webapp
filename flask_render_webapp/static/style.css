@@ -221,7 +221,7 @@ th {
 
 body {
     padding-top: 50px;
-    font-family: 'Open Sans', 'Carlito', 'Segoe UI', sans-serif;
+    font-family: 'Calibri', 'Carlito', 'Segoe UI', sans-serif;
 }
 
 section {
@@ -326,6 +326,10 @@ footer {
     white-space: nowrap;
 }
 
+.list-table-tr {
+    border-top: 1px solid;
+    border-bottom: 1px solid;
+}
 
 /* ----------- End ---------- */
 
