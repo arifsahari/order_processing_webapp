@@ -139,15 +139,6 @@ th {
     padding: 0px 10px;
 }
 
-.form-label {
-    font-size: 15px;
-}
-
-.form-group {
-    font-size: 12px;
-    padding: 10px 10px 0px 10px;
-}
-
 .form-control {
     position: relative;
     font-size: 15px;
@@ -221,7 +212,7 @@ th {
 
 body {
     padding-top: 50px;
-    font-family: 'Calibri', 'Carlito', 'Segoe UI', sans-serif;
+    font-family: 'Calibri', 'Carlito', sans-serif;
 }
 
 section {
@@ -238,8 +229,11 @@ label {
     display: block;
     margin-bottom: 0;
     margin-top: 10px;
-    font-size: 15px;
+    font-size: 16px;
     font-weight: bold;
+    background-color: #cccccc;
+    width: 75%;
+    border-radius: 5px;
 }
 
 button {
