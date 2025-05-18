@@ -86,15 +86,15 @@
                     <div class='col-md-3'>
 
                         <div>
-                            <label for='fileUpload' class='form-label'>Upload Excel/CSV</label>
+                            <label for='fileUpload'>Upload Excel/CSV</label>
                             <input type='file' id='fileUpload' class='form-control'>
                             <div class='btn-radio'>
                                 <input type='radio' name='file_upload' value='upload' checked> Default
                                 <input type='radio' name='file_upload' value='abx'> ABX
                                 <input type='radio' name='file_upload' value='sf'> SF
                             </div>
-                            <div>
-                                <button class='ms-1' onclick='uploadFile()'>Upload Files</button>
+                            <div class='ms-1'>
+                                <button onclick='uploadFile()'>Upload Files</button>
                             </div>
                             <!-- <button onclick='uploadFile()'>Import Files</button> -->
                         </div>
@@ -116,7 +116,7 @@
                                     <select class='select2-container' id='selectDesign' multiple='multiple'></select>
                                 </div>
                             <!-- Button -->
-                            <div>
+                            <div class='ms-1'>
                                 <button class='btn-radio' onclick='selectAllDesigns()'>Select All</button>
                                 <button class='btn-radio' onclick='clearDesigns()'>Clear Selection</button>
                             </div>
@@ -248,12 +248,12 @@
                         </div>
 
                         <!-- Button -->
-                        <div>
+                        <div class='btn-list'>
                             <div>
-                                <button class='btn-list' onclick="printTable('picklist')">Print Picklist</button>
-                                <button class='btn-list' onclick="printTable('orderlist')">Print Orderlist</button>
+                                <button onclick="printTable('picklist')">Print Picklist</button>
+                                <button onclick="printTable('orderlist')">Print Orderlist</button>
                             </div>
-                            <button class='btn-list' onclick='exportFile()' id='exportAllBtn'>Export Files</button>
+                            <button onclick='exportFile()' id='exportAllBtn'>Export Files</button>
                         </div>
 
                         <div>
