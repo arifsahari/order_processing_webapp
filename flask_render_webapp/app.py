@@ -265,9 +265,10 @@ def process_filtered_data():
             'status': 'error',
             'message': 'No data found after filtering'})
     # return jsonify({'status': 'success', 'filtered_data': step_b.to_dict(orient='records')})
-
-    output_file = os.path.join(DOWNLOAD_FOLDER, 'order_step_b.csv')
+    
     os.makedirs(DOWNLOAD_FOLDER, exist_ok=True)
+    output_file = os.path.join(DOWNLOAD_FOLDER, 'order_step_b.csv')
+
     try:
         step_b.to_csv(output_file, index=False, encoding='utf-8')
         print(f'{process_filtered_data.__name__} : Processed file saved: {output_file}')
@@ -481,15 +482,16 @@ def process_export_file():
     global FILTER
     if FILTER is None or FILTER.empty:
         print(f'{process_export_file.__name__} : FILTER is empty !')
-        csv_path = os.path.join(DOWNLOAD_FOLDER,'order_step_b.csv')
-        print(f'{process_export_file.__name__} : Looking for file at:', csv_path)
-
-        # csv_path = os.path.join(os.getcwd(), 'downloads','order_step_b.csv')
-        if os.path.exists(csv_path):
-            FILTER = pd.read_csv(csv_path, encoding='utf-8')
-        else:
-            return jsonify({
-                'status': 'error', 'message': 'No data to export'})
+        FILTER = os.path.join(DOWNLOAD_FOLDER,'order_step_b.csv')
+        
+    csv_path = os.path.join(DOWNLOAD_FOLDER, 'order_step_b.csv')
+    
+    if os.path.exists(csv_path):
+        FILTER = pd.read_csv(csv_path, encoding='utf-8', low_memory=False)
+    else:
+        return jsonify({
+            'status': 'error', 'message': 'No data to export'})
+        
     try:
         file_paths = export_file(FILTER)
         return jsonify({
