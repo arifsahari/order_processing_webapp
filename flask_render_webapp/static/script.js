@@ -776,10 +776,14 @@ function loadChart(chartType = 'bar', dataType = 'order_summary') {
 
             const ctx = document.getElementById('orderChart').getContext('2d');
             // const colorList = ['#2b8cbe', '#67a9cf', '#d1e5f0', '#f7f7f7', '#fddbc7', '#ef8a62', '#b2182b'];
-            const colorList = ['#2b8ebf', '#4097C4', '#54A1CA', '#66ABCF', '#7BB6D5',
+            const colorList = ['#2B8CBE', '#4097C4', '#54A1CA', '#66ABCF', '#7BB6D5',
                                 '#91C1DB', '#A4CBE0', '#BAD7E6', '#CFE2EC', '#E3ECF1',
                                 '#F7F7F7', '#F0E0E2', '#E9C9CD', '#E3B4BA','#DC9DA5',
-                                '#D58690', '#CE707B', '#C75A67', '#C04553', '#B82C3D', '#B2182B']
+                                '#D58690', '#CE707B', '#C75A67', '#C04553', '#B82C3D', '#B2182B',
+                                '#B82C3D', '#C04553', '#C75A67', '#CE707B', '#D58690',
+                                '#DC9DA5', '#E3B4BA', '#E9C9CD', '#F0E0E2', '#F7F7F7',
+                                '#E3ECF1', '#CFE2EC', '#BAD7E6', '#A4CBE0', '#91C1DB',
+                                '#7BB6D5', '#66ABCF', '#54A1CA', '#4097C4', '#2B8CBE' ]
            const colors = data.x.map((_, i) => colorList[i % colorList.length]);
 
             // Clear existing chart
@@ -788,6 +792,7 @@ function loadChart(chartType = 'bar', dataType = 'order_summary') {
             }
 
             // Generate new chart
+            window.devicePixelRatio = 2;
             window.orderChart = new Chart(ctx, {
                 type: chartType,
                 plugins: [ChartDataLabels],
@@ -801,6 +806,7 @@ function loadChart(chartType = 'bar', dataType = 'order_summary') {
                         backgroundColor: colors,
                         borderColor: 'grey',
                         borderWidth: 2,
+                        borderRadius: 4,
                         fill: chartType === 'line' ? false : true,
                         tension: 0.3, // smooth line
                         barPercentage: 1,         // Kawal lebar bar
