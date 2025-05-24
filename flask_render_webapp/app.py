@@ -135,9 +135,13 @@ def upload_file():
             folder_path = app.config['UPLOAD_FOLDER']
         else:
             folder_path = os.path.join(app.config['UPLOAD_FOLDER'], selected_folder)
-
+            
+        timestamp = datetime.now().strftime(f'%Y-%m-%d_%H-%M-%S')
+        timestamp_filename = f'{timestamp}_{file.filename}'
+        
         ensure_folder_exists(folder_path)
-        file_path = os.path.join(folder_path, file.filename)
+        # file_path = os.path.join(folder_path, file.filename)
+        file_path = os.path.join(folder_path, timestamp_filename)
         file.save(file_path)
         """
         # # Simpan ke Supabase sebagai simpanan kekal
