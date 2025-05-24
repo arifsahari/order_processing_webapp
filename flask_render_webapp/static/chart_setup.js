@@ -15,7 +15,7 @@ Chart.defaults.color = 'black';
 
 // 2. Layout Global
 Chart.defaults.layout = {
-    padding: { right: 50, left: 0 },
+    padding: { right: 20, left: 0 },
     borderWidth: 1
 };
 
@@ -95,7 +95,7 @@ Chart.overrides.bar = {
     indexAxis: 'y',
     scales: {
         x: {
-            grace: '15%',
+            grace: '20%',
             type: 'linear',
             beginAtZero: true,
             grid: { color: 'grey', lineWidth: 1 },
@@ -144,3 +144,123 @@ Chart.overrides.line = {
         }
     }
 };
+
+
+// Chart : Scatter Plot
+Chart.overrides.scatter = {
+    indexAxis: 'x',
+    scales: {
+        x: {
+            type: 'linear',
+            grid: { color: 'grey', lineWidth: 1 },
+            border: { color: 'black', width: 2 },
+            title: {
+                display: true,
+                text: 'X Axis',
+                font: { size: 14, weight: 'bold' },
+                color: 'black'
+            },
+            ticks: {
+                font: { size: 14, weight: 'bold' },
+                color: 'black'
+            }
+        },
+        y: {
+            type: 'linear',
+            beginAtZero: true,
+            grid: { color: 'grey', lineWidth: 1 },
+            border: { color: 'black', width: 2 },
+            title: {
+                display: true,
+                text: 'Y Axis',
+                font: { size: 14, weight: 'bold' },
+                color: 'black'
+            },
+            ticks: {
+                font: { size: 14, weight: 'bold' },
+                color: 'black'
+            }
+        }
+    }
+};
+
+
+// Chart : Heatmap
+Chart.overrides.matrix = {
+    indexAxis: 'x',
+    scales: {
+        x: {
+            type: 'category',
+            offset: true,
+            grid: { display: false },
+            border: { color: 'black', width: 2 },
+            ticks: {
+                font: { size: 14, weight: 'bold' },
+                color: 'black'
+            }
+        },
+        y: {
+            type: 'category',
+            offset: true,
+            grid: { display: false },
+            border: { color: 'black', width: 2 },
+            ticks: {
+                font: { size: 14, weight: 'bold' },
+                color: 'black'
+            }
+        }
+    },
+    plugins: {
+        legend: { display: false }
+    }
+};
+
+
+// =============================
+// Global Setting for Chart Dataset Handler
+// =============================
+function getDatasetByChartType(chartType, data, colorList) {
+    if (chartType === 'scatter' || chartType === 'bubble') {
+        return {
+            label: data.label || 'Data',
+            data: data.xy, // [{x, y}] or [{x, y, r}]
+            // backgroundColor: 'rgba(0, 102, 204, 0.6)',
+            backgroundColor: data.x.map((_, i) => colorList[i % colorList.length]),
+            borderColor: 'black',
+            borderWidth: 1
+        };
+    }
+
+    if (chartType === 'matrix') {
+        return {
+            label: data.label || 'Heatmap',
+            data: data.matrix, // [{x, y, v}]
+            backgroundColor: function(ctx) {
+                const val = ctx.raw.v;
+                return val > 80 ? '#B82C3D'
+                     : val > 60 ? '#D58690'
+                     : val > 40 ? '#F0E0E2'
+                     : val > 20 ? '#A4CBE0'
+                     : '#BAD7E6';
+            },
+            borderWidth: 1,
+            width: ({chart}) => chart.chartArea.width / data.columns.length,
+            height: ({chart}) => chart.chartArea.height / data.rows.length
+        };
+    }
+
+    // Default (bar, line, etc.)
+    return {
+        label: data.label || 'Data',
+        data: data.y,
+        backgroundColor: data.x.map((_, i) => colorList[i % colorList.length]),
+        borderColor: 'grey',
+        borderWidth: 2,
+        borderRadius: 3,
+        fill: chartType === 'line' ? false : true,
+        tension: 0.3, // smooth line
+        barPercentage: 1,         // Kawal lebar bar
+        // categoryPercentage: 0.9
+    };
+}
+
