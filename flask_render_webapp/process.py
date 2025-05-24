@@ -17,8 +17,7 @@ import glob
 import openpyxl
 
 # Custom Module
-import mapper.master
-import mapper.mapper_data
+from . import mapper
 
 process_blueprint = Blueprint('process', __name__)
 
