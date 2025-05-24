@@ -1,17 +1,43 @@
 # process.py
 
-from flask import Blueprint, request, jsonify, send_file
+""""""""""""""""""""""""""""""
+# FILE: process.py
+""""""""""""""""""""""""""""""
+
+# ========== Import Requirements ==========
+
+# Library
+from flask import Blueprint, request, jsonify, send_file, redirect, url_for
 from collections import OrderedDict
 import pandas as pd
 import numpy as np
 import os
 import json
 import glob
+import openpyxl
 
+# Custom Module
+import mapper.master
+import mapper.mapper_data
 
 process_blueprint = Blueprint('process', __name__)
 
-# Global Variables
+
+# ========== Configuration ==========
+# Directories
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+UPLOAD_FOLDER = os.path.join(BASE_DIR, 'uploads')
+DOWNLOAD_FOLDER = os.path.join(BASE_DIR, 'downloads')
+EXPORT_FOLDER = os.path.join(BASE_DIR, 'exports')
+MAPPER_FOLDER = os.path.join(BASE_DIR, 'mapper', 'csv')
+ALLOWED_EXTENSIONS = {'csv', 'xlsx'}
+
+# Data for mapping
+DF_MASTER = pd.DataFrame(mapper.master.get_master_data()).copy()
+SHIPPER = pd.DataFrame(mapper.mapper_data.get_courier_state_data()).copy()
+SIZE = pd.DataFrame(mapper.mapper_data.get_size_data()).copy()
+
+# Variables
 DF = None
 DF_A = None
 DF_B = None
@@ -20,12 +46,13 @@ PL = None
 OL = None
 DF_DO = None
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-UPLOAD_FOLDER = os.path.join(BASE_DIR, 'uploads')
-DOWNLOAD_FOLDER = os.path.join(BASE_DIR, 'downloads')
-EXPORT_FOLDER = os.path.join(BASE_DIR, 'exports')
+PATHFILE_A = os.path.join(DOWNLOAD_FOLDER, 'order_step_a.csv')
+PATHFILE_B = os.path.join(DOWNLOAD_FOLDER, 'order_step_b.csv')
 
 
+# ========== Helper Functions ==========
+
+# Function : Set filter
 def set_filter(df):
     global FILTER, DF, DF_A, DF_B, PL, OL
     DF = df.copy()
@@ -35,25 +62,28 @@ def set_filter(df):
     PL = df.copy()
     OL = df.copy()
 
-
+# Function : Check for folder existence
 def ensure_folder_exists(path):
     if not os.path.exists(path):
         os.makedirs(path)
 
+# Function : Check for allowed files
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-'''''''''''''''
+
+# ========== Main Functions ==========
+
+"""
 Data Processing
-'''''''''''''''
+"""
 
+# Main Function :
+# Process Step A (Upload and Clean Data)
 def process_step_a(df, DF_MASTER, SHIPPER, SIZE):
     global DF_A, DF
     DF = df.copy()
     DF_A = df.copy()
-
-    if DF_MASTER is None or DF_MASTER.empty:
-        print('DF_MASTER is None or Empty!')  # Debug
-    else:
-        print(f'DF_MASTER Loaded - Columns: {DF_MASTER.columns.tolist()}')  # Debug
 
     # Basic cleaning
     DF_A = DF_A.replace([float('inf'), float('-inf')], float('nan')).fillna('')
@@ -69,6 +99,7 @@ def process_step_a(df, DF_MASTER, SHIPPER, SIZE):
     DF_A['Order Time'] = pd.to_datetime(DF_A['Order Time'], dayfirst=True)
     DF_A['Phone Number'] = DF_A['Phone Number'].astype(str)
     DF_A['Post Code'] = DF_A['Post Code'].astype(str)
+    DF_A['Order No'] = DF_A['Order No'].astype(str)
     DF_A['Tracking Number'] = DF_A['Tracking Number'].astype(str)
     DF_A['SKU'] = DF_A['SKU'].str.lower().astype(str).str.strip()
     DF_MASTER['SKU PICKLIST'] = DF_MASTER['SKU PICKLIST'].astype(str).str.lower().str.strip()
@@ -114,12 +145,15 @@ def process_step_a(df, DF_MASTER, SHIPPER, SIZE):
 
     # oversea & self pickup mapping
     oversea = (~DF_A['Country'].isin(['Malaysia', 'Singapore'])) \
-            & (DF_A['Tracking Number'] == '') \
-            & (DF_A['Delivery Address'] != '')
-    DF_A.loc[oversea,[
+            & (DF_A['Delivery Address'] != '') \
+            & (DF_A['Marketplace'] == 'Shopify')
+            # & (DF_A['Tracking Number'] == '') \
+    self_pickup = (DF_A['Country'] == '') & (DF_A['Marketplace'] == 'Shopify')
+
+    DF_A.loc[oversea, [
         'SEQ', 'Shipper', 'Store', 'Courier'
         ]] = ['40', 'DHL', 'WEB OS', 'DHL']
-    DF_A.loc[DF_A['Country'] == '', [
+    DF_A.loc[self_pickup, [
         'SEQ', 'Shipper', 'Store', 'Courier'
         ]] = ['41', 'Self Pickup', 'WEB SP', 'Self Pickup']
 
@@ -151,22 +185,25 @@ def process_step_a(df, DF_MASTER, SHIPPER, SIZE):
 
     DF_A = DF_A[necessary_columns]
     DF_A = DF_A.drop_duplicates(subset=['Order No', 'SKU', 'Quantity'], keep='last')
+    DF_A = DF_A.dropna(subset=['Country', 'SKU', 'Quantity'])
 
     print(f'Processing Data - Rows: {DF_A.shape[0]}, Columns: {DF_A.shape[1]}')
 
     if DF_A.empty:
-        print('Error: Data kosong selepas diproses!')
+        print('Error: Data empty')
         return None
     return DF_A
 
 
-'''''''''''''''
+"""
 Data Filtering
-'''''''''''''''
+"""
 
+# Main Function :
+# Process Step B (Filtered Data)
 def process_step_b(
-        designs=None, filter_design='none', warehouse='none',
-        platform='none', stores='none', filter_batch='none'):
+    designs=None, filter_design='none', warehouse='none',
+    platform='none', stores='none', filter_batch='none'):
     global DF_A, DF_B, FILTER
 
     if designs is None:
@@ -179,7 +216,7 @@ def process_step_b(
         DF_B['SKU Quantity'] = DF_B['SKU'] +' ('+ DF_B['Quantity'].astype(str)+')'
         DF_B['Store Quantity'] = DF_B['Store'] +' ('+ DF_B['Quantity'].astype(str) +') : '
 
-    # Filter based on user option
+    # Filter on design
     FILTER = DF_B.copy()
     if designs:
         order_ids = FILTER[FILTER['Design'].isin(designs)]['Order No'].unique()
@@ -188,25 +225,25 @@ def process_step_b(
         elif filter_design == 'exclude':
             FILTER = FILTER[~FILTER['Order No'].isin(order_ids)]
 
+    # Filter on store
     if warehouse == 'inhanna':
-        FILTER = FILTER[FILTER['BigSeller Store Nickname'].isin(['Inhanna Shopify','Inhanna Tiktok','Inhanna Shopee','Inhanna Zalora'])]
+        FILTER = FILTER[FILTER['BigSeller Store Nickname'].isin(
+            ['Inhanna Shopify','Inhanna Tiktok','Inhanna Shopee','Inhanna Zalora'])]
     elif warehouse == 'other':
-        FILTER = FILTER[~FILTER['BigSeller Store Nickname'].isin(['Inhanna Shopify','Inhanna Tiktok','Inhanna Shopee','Inhanna Zalora'])]
+        FILTER = FILTER[~FILTER['BigSeller Store Nickname'].isin(
+            ['Inhanna Shopify','Inhanna Tiktok','Inhanna Shopee','Inhanna Zalora'])]
 
+    # Filter on platform
     if platform == 'marketplace':
         FILTER = FILTER[FILTER['Marketplace'] != 'Shopify']
     elif platform == 'website':
         FILTER = FILTER[FILTER['Marketplace'] == 'Shopify']
 
+    # Filter on store
     stores_map = {
-        'tiktok_opt': 'TIK',
-        'shopee_opt': 'SHO',
-        'zalora_opt': 'ZAL',
-        'ninjavan_opt': 'WEB NV',
-        'abx_opt': 'WEB AB',
-        'sf_opt': 'WEB SF',
-        'oversea_opt': 'WEB OS',
-        'spickup_opt': 'WEB SP'
+        'tiktok_opt': 'TIK', 'shopee_opt': 'SHO', 'zalora_opt': 'ZAL',
+        'ninjavan_opt': 'WEB NV', 'abx_opt': 'WEB AB', 'sf_opt': 'WEB SF',
+        'oversea_opt': 'WEB OS', 'spickup_opt': 'WEB SP'
     }
 
     if stores and isinstance(stores, list):
@@ -217,7 +254,8 @@ def process_step_b(
     # Assign order
     mapper = assign_order_sequence(FILTER) if filter_batch == 'none' \
             else assign_order_sequence_batch(FILTER)
-    key = 'Order Sequence' if filter_batch == 'none' else 'Order Sequence Batched'
+    key = 'Order Sequence' if filter_batch == 'none'  \
+            else 'Order Sequence Batched'
     FILTER[key] = FILTER['Order No'].map(mapper.set_index('Order No')[key])
     FILTER['Store Quantity'] = FILTER['Store'] + ' (' \
         + FILTER['Quantity'].astype(str) + ') : ' \
@@ -226,26 +264,25 @@ def process_step_b(
     return FILTER
 
 
-def process_step_c():
-
-    pass
-
-
-'''''''''''''''
+"""
 Assign Batch
-'''''''''''''''
+"""
 
+# Function : Assign non-batch sequence
 def assign_order_sequence(df):
+    df['SEQ'] = pd.to_numeric(df['SEQ'], errors='coerce').astype(int)
     df_seq = df.groupby([
         'Order No','Order Time','SEQ'
         ])['Quantity'].sum().reset_index()\
             .sort_values(by=['SEQ','Order Time'], ascending=True)
+
     df_seq = df_seq[['Order No']]
     df_seq['Order Sequence'] = list(range(1, len(df_seq)+1))
     return df_seq
 
-
+# Function : Assign batch sequence
 def assign_order_sequence_batch(df):
+    df['SEQ'] = pd.to_numeric(df['SEQ'], errors='coerce').astype(int)
     df_seq = df.groupby([
         'Order No','Order Time','SEQ'
         ])['Quantity'].sum().reset_index()\
@@ -255,13 +292,29 @@ def assign_order_sequence_batch(df):
     return df_seq
 
 
+"""
+Batching Printable Lists
+"""
+
+# Function : Load filtered data for list printing
+def load_filtered_data(batch_no):
+    if not os.path.exists(PATHFILE_B):
+        print(f'[Load Filtered Data] order_step_b.csv not found')
+        return None
+    df = pd.read_csv(PATHFILE_B, encoding='utf-8')
+    if 'Batch' not in df.columns:
+        print(f'[Load Filtered Data] Batch column not found')
+        return None
+    return df[df['Batch'] == batch_no].copy()
+
+# Function : Print picklist by batch
 def get_picklist_batch(batch_no):
     df = load_filtered_data(batch_no)
     if df is not None and not df.empty:
         return picklist(df)
     return None
 
-
+# Function : Print orderlist by batch
 def get_orderlist_batch(batch_no):
     df = load_filtered_data(batch_no)
     if df is not None and not df.empty:
@@ -269,22 +322,11 @@ def get_orderlist_batch(batch_no):
     return None
 
 
-def load_filtered_data(batch_no):
-    path = os.path.join(DOWNLOAD_FOLDER, 'order_step_b.csv')
-    if not os.path.exists(path):
-        print(f'{load_filtered_data.__name__} order_step_b.csv not found')
-        return None
-    df = pd.read_csv(path, encoding='utf-8')
-    if 'Batch' not in df.columns:
-        print(f'{load_filtered_data.__name__} Batch column not found')
-        return None
-    return df[df['Batch'] == batch_no].copy()
+"""
+Batching Dropdown
+"""
 
-
-'''''''''''''''
-Batch Dropdown List
-'''''''''''''''
-
+# Function : Assign all order (batch/non-batch)
 def assign_all_batch(df, batch_size=100, min_last_batch_size=30, filter_batch='none'):
     df = df.sort_values(by=['Order Sequence'], ascending=True)
     batch = df.copy()
@@ -308,6 +350,7 @@ def assign_all_batch(df, batch_size=100, min_last_batch_size=30, filter_batch='n
     return batch
 
 
+# Function : Assign all order in dropdown list
 def dropdown_all_batch(df, filter_batch):
     if filter_batch == 'none':
         return [{'label': 'All Orders', 'value': 1}]
@@ -317,21 +360,22 @@ def dropdown_all_batch(df, filter_batch):
     return dropdown_options
 
 
-'''''''''''''''
-List Generation
-'''''''''''''''
+"""
+Generate List
+"""
 
+# Function : Generate picklist
 def picklist(df):
     global PL
     PL = df.copy()
 
     PL['loc_number'] = PL['Product Location'].astype(str).str.strip().replace('', '9999')
     PL = PL.groupby([
-        'Product Location', 'SKU', 'Product Name', 'Size Sequence', 'loc_number', 'Design'
+        'Product Location', 'SKU', 'Product Name', 'Size Sequence', 'loc_number'
         ], dropna=False).agg({
             'Store Quantity': lambda x: ', '.join(x.map(str)),
             'Quantity': 'sum'}).reset_index()\
-            .sort_values(by=['loc_number', 'Design', 'Size Sequence'], \
+            .sort_values(by=['loc_number', 'Size Sequence'], \
             ascending=True, na_position='last')
 
     PL['SKU Sequence'] = [i+1 for i in range(len(PL))]
@@ -345,6 +389,7 @@ def picklist(df):
     return PL
 
 
+# Function : Generate orderlist
 def orderlist(df):
     global OL
     OL = df.copy()
@@ -362,25 +407,20 @@ def orderlist(df):
     return OL
 
 
+# Function : Overview of order
 def data_overview(df):
     global DO
     DO = df.copy()
 
     DO_1 = DO.copy()
-    # Marketplace = DO_1[DO_1['Marketplace'] != 'Shopify']['Marketplace'].count()
-    # Website = DO_1[DO_1['Marketplace'] == 'Shopify']['Marketplace'].count()
-    # Order_by_Platform = pd.DataFrame({
-    #     'Platform': ['Marketplace', 'Website'],
-    #     'Total Order': [Marketplace, Website]
-    #     }).reset_index(drop=True)
 
     Order_Count = DO_1.groupby(['Courier'])['Order No'].nunique().reset_index()
     Order_Count = Order_Count[['Courier', 'Order No']].rename(columns={'Order No': 'Total Order'})
     Order_by_Courier = Order_Count
 
     DO_2 = DO.copy()
-    Order_Group = DO_2.groupby(['Platform', 'Store'])['Order No'].nunique().reset_index()
-    Order_Group = Order_Group[['Platform', 'Store', 'Order No']].rename(columns={'Order No': 'Total Order'})
+    Order_Group = DO_2.groupby(['Platform', 'Store'])['Order No'].nunique().reset_index(name='Total Order')
+    # Order_Group = Order_Group[['Platform', 'Store', 'Order No']].rename(columns={'Order No': 'Total Order'})
 
     Order_Group['Store'] = Order_Group['Store'].replace({
         'TIK': 'TikTok', 'SHO': 'Shopee', 'ZAL': 'Zalora', 'LAZ': 'Lazada',
@@ -398,8 +438,10 @@ def data_overview(df):
     return  Order_Group
 
 
+# Main Function :
+# Generate bunch of lists
 def generate_list(options=''):
-    global FILTER, PL, OL, DO
+    global PL, OL, DO
 
     if FILTER is None or FILTER.empty:
         print(f'{generate_list.__name__} : FILTER is empty !')
@@ -426,18 +468,19 @@ def generate_list(options=''):
         return None
 
 
-'''''''''''''''
-Process Tracking Number
-'''''''''''''''
+"""
+Combining Tracking Number
+"""
 
+# Function : Get latest file from respected folder
 def get_latest_folder(folder_path):
     if not os.path.exists(folder_path):
         print(f'Folder not found: {folder_path}')
         return None
 
-    files = glob.glob(os.path.join(folder_path, '*.xlsx'))
+    files = glob.glob(os.path.join(folder_path, '*.xlsx')) + glob.glob(os.path.join(folder_path, '*.csv'))
     if not files:
-        print(f'No Excel files found in {folder_path}')
+        print(f'No Excel or CSV files found in {folder_path}')
         return None
 
     latest_file = max(files, key=os.path.getmtime)
@@ -445,12 +488,22 @@ def get_latest_folder(folder_path):
     return latest_file
 
 
+# Function : Process ABX tracking
 def process_abx(file_path):
     if not file_path:
         return pd.DataFrame()
 
     try:
-        df = pd.read_excel(file_path)
+        ext = os.path.splitext(file_path)[1].lower()
+        if ext == '.csv':
+            df = pd.read_csv(file_path, engine='python')
+        elif ext in ['.xlsx', '.xls']:
+            df = pd.read_excel(file_path, engine='openpyxl')
+        else:
+            print(f'Unsupported file format: {ext}')
+            return pd.DataFrame()
+
+        # df = pd.read_excel(file_path)
         column = ['Unnamed: 5', 'Unnamed: 1']
         if not all(col in df.columns for col in column):
             print(f'ABX file missing expected columns: {column}')
@@ -461,21 +514,23 @@ def process_abx(file_path):
         print(f'Error reading ABX file: {e}')
         return pd.DataFrame()
 
-    # if file_path:
-    #     try:
-    #         df = pd.read_excel(file_path)
-    #         return df[['Unnamed: 5', 'Unnamed: 1']].iloc[1:]
-    #     except Exception as e:
-    #         print(f'Error reading ABX file: {e}')
-    # return pd.DataFrame()
 
-
+# Function : Process SF tracking
 def process_sf(file_path):
     if not file_path:
         return pd.DataFrame()
 
     try:
-        df = pd.read_excel(file_path)
+        ext = os.path.splitext(file_path)[1].lower()
+        if ext == '.csv':
+            df = pd.read_csv(file_path, engine='python')
+        elif ext in ['.xlsx', '.xls']:
+            df = pd.read_excel(file_path, engine='openpyxl')
+        else:
+            print(f'Unsupported file format: {ext}')
+            return pd.DataFrame()
+
+        # df = pd.read_excel(file_path)
         column = ['Shipment Reference No.', 'Waybill No. (Parent Waybill No. and Sub Waybill No.)']
         if not all(col in df.columns for col in column):
             print(f'SF file missing expected columns: {column}')
@@ -486,43 +541,36 @@ def process_sf(file_path):
         print(f'Error reading SF file: {e}')
         return pd.DataFrame()
 
-    # if file_path:
-    #     try:
-    #         df = pd.read_excel(file_path)
-    #         return df[['Shipment Reference No.', 'Waybill No. (Parent Waybill No. and Sub Waybill No.)']]
-    #     except Exception as e:
-    #         print(f'Error reading SF file: {e}')
-    # return pd.DataFrame()
 
-
+# Function : Process NV tracking
 def process_nv():
-    global FILTER
-    if FILTER is None or FILTER.empty:
-        csv_path = os.path.join(DOWNLOAD_FOLDER, 'order_step_b.csv')
-        if os.path.exists(csv_path):
-            FILTER = pd.read_csv(csv_path, encoding='utf-8')
+    # if FILTER is None or FILTER.empty:
+    # csv_path = os.path.join(DOWNLOAD_FOLDER, 'order_step_b.csv')
+    if os.path.exists(PATHFILE_B):
+        FILTER = pd.read_csv(PATHFILE_B, encoding='utf-8', low_memory=False)
 
-    if FILTER is not None and not FILTER.empty:
-        try:
-            track = FILTER[(FILTER['Marketplace'] == 'Shopify') & (FILTER['Courier'] == 'Ninjavan')].copy()
-            base = 'NVMYINHAN'
-            total_length = 18
-            full_number = [base + str(i).zfill(total_length - len(base)) for i in track['Order No']]
-            return pd.DataFrame({
-                'order_id': track['Order No'].values,
-                'tracking': full_number
-            }).drop_duplicates(subset=['order_id'], keep='first')
-        except Exception as e:
-            print(f'Error processing NV tracking: {e}')
+    # if FILTER is not None and not FILTER.empty:
+    try:
+        track = FILTER[(FILTER['Marketplace'] == 'Shopify') & (FILTER['Courier'] == 'Ninjavan')].copy()
+        base = 'NVMYINHAN'
+        total_length = 18
+        full_number = [base + str(i).zfill(total_length - len(base)) for i in track['Order No']]
+        return pd.DataFrame({
+            'order_id': track['Order No'].values,
+            'tracking': full_number
+        }).drop_duplicates(subset=['order_id'], keep='first')
+    except Exception as e:
+        print(f'Error processing NV tracking: {e}')
+
     return pd.DataFrame()
 
 
+# Main Function :
+# Combine all tracking into single file
 def latest_tracking_files():
-    # UPLOAD_FOLDER
-    # DOWNLOAD_FOLDER
-    uploads_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'uploads')
-    sf_folder = os.path.join(uploads_folder, 'sf')
-    abx_folder = os.path.join(uploads_folder, 'abx')
+    # uploads_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'uploads')
+    sf_folder = os.path.join(UPLOAD_FOLDER, 'sf')
+    abx_folder = os.path.join(UPLOAD_FOLDER, 'abx')
 
     sf_file = get_latest_folder(sf_folder)
     abx_file = get_latest_folder(abx_folder)
@@ -554,12 +602,13 @@ def latest_tracking_files():
         return None
 
 
-'''''''''''''''
+"""
 Export Files
-'''''''''''''''
+"""
 
+# Main Function :
+# Export all files
 def export_file(df):
-    global FILTER
     df = df.copy()
 
     export = [
@@ -567,6 +616,15 @@ def export_file(df):
         'scan_mp','scan_web',
         'tracking_update', 'order_mark'
         ]
+
+    for filename in os.listdir(EXPORT_FOLDER):
+        file_path = os.path.join(EXPORT_FOLDER, filename)
+        try:
+            if os.path.isfile(file_path):
+                os.remove(file_path)
+                print(f'[Export File] Deleted old file: {file_path}')
+        except Exception as e:
+            print(f'[Export File] Failed to delete {file_path}: {str(e)}')
 
     # file_paths = []
     file_paths = {}
@@ -586,6 +644,7 @@ def export_file(df):
                         print(f'Data is empty for {file}')
                 except Exception as e:
                     print(f'Export failed: {file} - {str(e)}')
+
     return file_paths
 
 
@@ -698,6 +757,7 @@ def awb_sf(df):
 
     sf_scan['Phone Number'] = pd.to_numeric(sf_scan['Phone Number'], errors='coerce').fillna(0).astype(int).astype(str)
     sf_scan['Remark'] = sf_scan['Quantity'].astype(str) + '-' + sf_scan['SKU Quantity']
+    sf_scan['Receiver Name'] = sf_scan.apply(lambda x: f"{sf_scan.index.get_loc(x.name) + 1}-{x['Receiver Name']}", axis=1)
 
     header_2 = [
         'Shipment Reference No.', 'Receiver email', 'Recipient Name',
@@ -745,7 +805,7 @@ def awb_sf(df):
     sf_file.loc[2:2+len(sf_scan)-1, 'Receiver Postal Code'] = sf_scan['Post Code'].values
     sf_file.loc[2:2+len(sf_scan)-1, 'Unit Price'] = sf_scan['Order Total'].values
     sf_file.loc[2:2+len(sf_scan)-1, 'Quantity'] = sf_scan['Quantity'].values
-    sf_file.loc[2:2+len(sf_scan)-1, 'Unit Price'] = sf_scan['Order Total'].values
+    sf_file.loc[2:2+len(sf_scan)-1, 'Unit Price'] = (sf_scan['Order Total'].values / sf_scan['Quantity'].values).round(2)
     sf_file.loc[2:2+len(sf_scan)-1, 'AWB Remarks'] = sf_scan['Remark'].values
     sf_file.loc[2:2+len(sf_scan)-1, a] = b
 
@@ -801,9 +861,8 @@ def scan_mp(df):
 # Web Scan Upload
 def scan_web(df):
     tracking_df = latest_tracking_files()
-
     if tracking_df is None:
-        return None
+         tracking_df = pd.read_csv(os.path.join(DOWNLOAD_FOLDER,'tracking_map.csv'))
 
     web = df.copy()
 
@@ -850,7 +909,6 @@ def scan_web(df):
 def tracking_update(df):
     tracking_df = latest_tracking_files()
     if tracking_df is None:
-        return None
         tracking_df = pd.read_csv(os.path.join(DOWNLOAD_FOLDER,'tracking_map.csv')).copy()
 
     track = df.copy()
@@ -927,4 +985,284 @@ def order_mark(df):
     result.to_excel(result_output , index=False)
 
     return result_output
+
+
+"""""""""""""""
+Generate Chart
+"""""""""""""""
+
+# Function : Group chart functions
+def chart_group(df, chart_type, limit=None):
+    df_chart = df.copy()
+
+    df_chart['Quantity'] = pd.to_numeric(df_chart['Quantity'], errors='coerce').astype('Int64')
+    df_chart['Order Time'] = pd.to_datetime(df_chart['Order Time'], errors='coerce')
+    df_chart['Store'] = df_chart['Store'].replace({
+        'TIK': 'TikTok', 'SHO': 'Shopee', 'ZAL': 'Zalora','LAZ': 'Lazada',
+        'WEB NV': 'Ninjavan', 'WEB AB': 'ABX', 'WEB SF': 'SF Express',
+        'WEB OS': 'Oversea', 'WEB SP': 'Self Pickup'
+    })
+
+    if chart_type == 'order_summary':
+        chart_result = bar_chart(
+            df_chart, x_col='Store', y_col='Order No', agg='nunique',
+            limit=None, title='Total Order by Store')
+
+    elif chart_type == 'product_summary':
+        chart_result = bar_chart(
+            df_chart, x_col='Design', y_col='Order No', agg='nunique',
+            limit=limit, title=f'Top {limit} Product by Order Count')
+
+    elif chart_type == 'product_qty':
+        chart_result = bar_chart(
+            df_chart, x_col='Design', y_col='Quantity', agg='sum',
+            limit=limit, title='Product by Quantity')
+
+    elif chart_type == 'order_daily':
+        chart_result = timeseries_chart(
+            df_chart, x_col='Order Time', y_col='Order No', agg='count',
+            limit=None, title='Daily Order', time_rule='D')
+    elif chart_type == 'order_monthly':
+        chart_result = timeseries_chart(
+            df_chart, x_col='Order Time', y_col='Order No', agg='count',
+            limit=None, title='Monthly Order', time_rule='M')
+
+    elif chart_type == 'plot_price_qty':
+        chart_result = timeseries_chart(
+            df_chart, x_col='Order Total', y_col='Quantity', agg='count',
+            limit=None, title='Product Price vs Quantity Sold')
+    elif chart_type == 'plot_price_qty':
+        chart_result = timeseries_chart(
+            df_chart, x_col='Order Total', y_col='Quantity', agg='count',
+            limit=None, title='Product Price vs Quantity Sold')
+    elif chart_type == 'plot_price_qty':
+        chart_result = timeseries_chart(
+            df_chart, x_col='Order Total', y_col='Quantity', agg='count',
+            limit=None, title='Product Price vs Quantity Sold')
+
+    else:
+        return jsonify({'status': 'fail', 'message': 'Unknown chart type'})
+
+    return jsonify({'status': 'success', **chart_result})
+
+
+# Function :
+def aggregate_chart_data(df, x_col, y_col, agg='count'):
+    df = df.copy()
+
+    if agg == 'count':
+        result = df.groupby(x_col)[y_col].count().reset_index(name='Total')
+    elif agg == 'sum':
+        result = df.groupby(x_col)[y_col].sum().reset_index(name='Total')
+    elif agg == 'mean':
+        result = df.groupby(x_col)[y_col].mean().reset_index(name='Total')
+    elif agg == 'nunique':
+        result = df.groupby(x_col)[y_col].nunique().reset_index(name='Total')
+    else:
+        raise ValueError('Unsupported aggregation function')
+
+    return result.sort_values(by='Total', ascending=False)
+
+
+# Function : Generate Time Series Chart
+def timeseries_chart(df, x_col, y_col, agg='count', limit=None, title='', time_rule='D'):
+    try:
+        df[x_col] = pd.to_datetime(df[x_col], errors='coerce')
+        if time_rule not in ['D', 'M', 'Y']:
+            time_rule = 'D'
+
+        if time_rule == 'D':
+            df[x_col] = df[x_col].dt.strftime('%Y-%m-%d')
+        elif time_rule == 'M':
+            df[x_col] = df[x_col].dt.strftime('%Y-%m')
+        else:  # 'Y'
+            df[x_col] = df[x_col].dt.strftime('%Y')
+
+        df = df.dropna(subset=[x_col, y_col])
+        df_group = df.groupby(x_col)[y_col]
+
+        if agg == 'count':
+            result = df_group.count()
+        elif agg == 'sum':
+            result = df_group.sum()
+        elif agg == 'nunique':
+            result = df_group.nunique()
+        else :
+            result = df_group.mean()
+
+        chart_data = result.reset_index().sort_values(by=[x_col],ascending=True).head(limit)
+
+        return {
+            'title': f'{title}',
+            'label': '',
+            'x': chart_data[x_col].tolist(),
+            'y': chart_data[y_col].tolist()
+        }
+
+    except Exception as e:
+        raise ValueError(f'Error in resampling: {str(e)}')
+
+
+# Function : Generate Bar Chart
+def bar_chart(df, x_col, y_col, agg='count', limit=None, title=''):
+    try:
+        # print('DEBUG columns:', df.columns.tolist())  # Add this
+
+        if x_col not in df.columns or y_col not in df.columns:
+            return {'status': 'fail', 'message': 'Invalid columns'}
+
+        df = df.dropna(subset=[x_col, y_col])
+        df_group = df.groupby(x_col)[y_col]
+
+        if agg == 'count':
+            result = df_group.count()
+        elif agg == 'sum':
+            result = df_group.sum()
+        elif agg == 'nunique':
+            result = df_group.nunique()
+        else :
+            result = df_group.mean()
+
+        chart_data = result.reset_index().sort_values(by=[y_col],ascending=False).head(limit)
+
+        # if limit and limit > 0:
+        #     chart_data = chart_data.head(limit)
+        # chart_data.columns = ['x', 'y']
+
+        return {
+            'status': 'success',
+            'title': title,
+            'label': '',
+            'x': chart_data[x_col].tolist(),
+            'y': chart_data[y_col].tolist()
+        }
+
+    except Exception as e:
+        return {'status': 'fail', 'message': str(e)}
+
+
+# Function : Generate Line Chart
+def line_chart(df, x_col, y_col, agg='count', limit=None, title='', time_rule=None):
+    try:
+        if x_col not in df.columns or y_col not in df.columns:
+            return {'status': 'fail', 'message': 'Invalid columns'}
+
+        df = df.dropna(subset=[x_col, y_col])
+        df_group = df.groupby(x_col)[y_col]
+
+        # agg_map = {
+        #     'sum': df_group.sum(),
+        #     'count': df_group.count(),
+        #     'nunique': df_group.nunique(),
+        #     'mean': df_group.mean()
+        # }
+
+        # if agg not in agg_map:
+        #     return {'status': 'fail', 'message': 'Invalid aggregation'}
+
+        if agg == 'count':
+            result = df_group.count()
+        elif agg == 'sum':
+            result = df_group.sum()
+        elif agg == 'nunique':
+            result = df_group.nunique()
+        else :
+            result = df_group.mean()
+
+        chart_data = result.reset_index().sort_values(by=[x_col],ascending=True).head(limit)
+
+        return {
+            'status': 'success',
+            'title': title,
+            'x': chart_data[x_col].tolist(),
+            'y': chart_data[y_col].tolist()
+        }
+
+    except Exception as e:
+        return {'status': 'fail', 'message': str(e)}
+
+
+# Function : Generate Pie Chart
+def pie_chart(df, x_col, y_col, agg='sum', limit=None, title=''):
+    try:
+        if x_col not in df.columns or y_col not in df.columns:
+            return {'status': 'fail', 'message': 'Invalid columns'}
+
+        df = df.dropna(subset=[x_col, y_col])
+        df_group = df.groupby(x_col)[y_col]
+
+        if agg == 'count':
+            result = df_group.count()
+        elif agg == 'sum':
+            result = df_group.sum()
+        elif agg == 'nunique':
+            result = df_group.nunique()
+        else :
+            result = df_group.mean()
+
+        chart_data = result.reset_index().sort_values(by=[x_col],ascending=True).head(limit)
+
+        return {
+            'status': 'success',
+            'title': title,
+            'label': '',
+            'x': chart_data[x_col].tolist(),
+            'y': chart_data[y_col].tolist()
+        }
+
+    except Exception as e:
+        return {'status': 'fail', 'message': str(e)}
+
+
+# Function : Generate Scatter Plot Chart
+def scatter_chart(df, x_col, y_col, title=''):
+    try:
+        if x_col not in df.columns or y_col not in df.columns:
+            return {'status': 'fail', 'message': 'Invalid columns'}
+
+        df = df.dropna(subset=[x_col, y_col])
+        xy_data = df[[x_col, y_col]].to_dict(orient='records')  # format: [{x:..., y:...}]
+
+        return {
+            'status': 'success',
+            'title': title,
+            'label': '',
+            'xy': [{'x': row[x_col], 'y': row[y_col]} for row in xy_data]
+        }
+
+    except Exception as e:
+        return {'status': 'fail', 'message': str(e)}
+
+
+# Function : Generate Heatmap Chart
+def heatmap_chart(df, x_col, y_col, value_col, title=''):
+    try:
+        if x_col not in df.columns or y_col not in df.columns or value_col not in df.columns:
+            return {'status': 'fail', 'message': 'Invalid columns'}
+
+        df = df.dropna(subset=[x_col, y_col, value_col])
+        df_group = df.groupby([x_col, y_col])[value_col].sum().reset_index()
+
+        columns = sorted(df[x_col].unique().tolist())
+        rows = sorted(df[y_col].unique().tolist())
+
+        matrix = []
+        for _, row in df_group.iterrows():
+            matrix.append({
+                'x': row[x_col],
+                'y': row[y_col],
+                'v': row[value_col]
+            })
+
+        return {
+            'status': 'success',
+            'title': title,
+            'label': '',
+            'matrix': matrix,
+            'columns': columns,
+            'rows': rows
+        }
+
+    except Exception as e:
+        return {'status': 'fail', 'message': str(e)}
 
