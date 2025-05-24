@@ -159,10 +159,6 @@ function customTitle(result, listType) {
 // ------------------------------
 
 
-// Use the helper
-let { displayListType, displayStoreType, dateStr, totalQty } = getPrintTableInfo(result, listType);
-
-
 // ------------------------------
 // Function : Desktop Print
 
