@@ -31,6 +31,7 @@ from .process import (
 # from .mapper import (mapper_data, master)
 import mapper.master
 import mapper.mapper_data
+from mapper.mapper_data import *
 
 app = Flask(__name__)
 app.register_blueprint(process_blueprint, url_prefix='/process')
