@@ -3,9 +3,9 @@
 
 
 // ------------------------------
-// Function : Set Print Contents
+// Print Contents
 
-function contentPrinTable(result, listType, selectedBatch) {
+function contentPrintTable(result, listType, selectedBatch) {
     let columns = result.columns;
     let data = result.data;
 
@@ -54,9 +54,13 @@ function contentPrinTable(result, listType, selectedBatch) {
             td.innerText = row[col];
 
             let headerText = col.toLowerCase();
-            if ((headerText.includes('qty') || headerText.includes('quantity')) && parseInt(row[col]) > 1) {
-                td.style.fontWeight = 'bold';
-                td.style.backgroundColor = '#ffcccb';
+            if ((headerText.includes('qty') || headerText.includes('quantity'))) {
+                td.setAttribute('data-quantity', parseInt(row[col]));
+
+                if (parseInt(row[col]) > 1) {
+                    td.style.fontWeight = 'bold';  // Optional: fallback styling
+                    td.style.backgroundColor = '#ffccbb';  // Optional: fallback styling
+                }
             }
 
             tr.appendChild(td);
@@ -71,7 +75,7 @@ function contentPrinTable(result, listType, selectedBatch) {
 
 
 // ------------------------------
-// Function : Set Print Style
+// Set print style
 
 function printStyle() {
     return `
@@ -82,7 +86,7 @@ function printStyle() {
             table { font-size: 12px !important; width: 100% !important;
                     border-collapse: collapse; page-break-before: auto;
                     break-inside: avoid; page-break-inside: avoid;
-                    page-break-after: auto;}
+                    page-break-after: auto; table-layout: fixed; /* enforce width control */}
             th, td { border: 1px solid black; text-align: left;
                     vertical-align: top; text-overflow: clip;
                     overflow: hidden; padding: 2px 2px !important; word-wrap: break-word; }
@@ -120,8 +124,7 @@ function printStyle() {
 
 
 // ------------------------------
-// Function : Set Custom Header and Title
-
+// Set custom header and title name
 function customTitle(result, listType) {
     let data = result.data;
 
@@ -160,10 +163,16 @@ function customTitle(result, listType) {
 
 
 // ------------------------------
-// Function : Desktop Print
+// Use the helper
+let { displayListType, displayStoreType, dateStr, totalQty } = getPrintTableInfo(result, listType);
+// ------------------------------
+
+
+// ------------------------------
+// Desktop Print
 
 function printTableDesktop(result, listType, selectedBatch) {
-    const table = contentPrinTable(result, listType, selectedBatch);
+    const table = contentPrintTable(result, listType, selectedBatch);
 
     let { displayListType, displayStoreType, dateStr, totalQty } = customTitle(result, listType);
     const title = `${displayListType.toUpperCase()} ${displayStoreType} ${dateStr} - ${selectedBatch}`;
@@ -180,10 +189,10 @@ function printTableDesktop(result, listType, selectedBatch) {
 
 
 // ------------------------------
-// Function : Mobile Print
+// Mobile Print
 
 function printTableMobile(result, listType, selectedBatch) {
-    const table = contentPrinTable(result, listType, selectedBatch);
+    const table = contentPrintTable(result, listType, selectedBatch);
 
     let { displayListType, displayStoreType, dateStr, totalQty } = customTitle(result, listType);
     const title = `${displayListType.toUpperCase()} ${displayStoreType} ${dateStr} - ${selectedBatch}`;
@@ -198,19 +207,39 @@ function printTableMobile(result, listType, selectedBatch) {
     doc.write(`<html><head><title>${title}</title>${style}</head><body>`);
     doc.write(table.outerHTML);
     doc.write('</body></html>');
+    doc.write(`
+        <script>
+            // Tunggu sehingga DOM siap
+            window.onload = function() {
+                // Panggil fungsi highlightColumn jika ada
+                if (typeof highlightColumn === 'function') {
+                    highlightColumn();
+                }
+
+                // Force print selepas gaya siap
+                setTimeout(() => {
+                    window.focus();
+                    window.print();
+                }, 300);
+            };
+        </script>
+    `);
     doc.close();
 
+    // setTimeout(() => {
+    //     iframe.contentWindow.focus();
+    //     iframe.contentWindow.print();
+    //     setTimeout(() => document.body.removeChild(iframe), 2000);
+    // }, 500);
     setTimeout(() => {
-        iframe.contentWindow.focus();
-        iframe.contentWindow.print();
-        setTimeout(() => document.body.removeChild(iframe), 2000);
-    }, 500);
+        document.body.removeChild(iframe);
+    }, 3000);
 }
 // ------------------------------
 
 
 // ------------------------------
-// Main Function : Print 
+// Main Function Print
 
 function printTableAuto(listType) {
     let batchDropdown = document.getElementById('batchListDropdown');
@@ -239,6 +268,8 @@ function printTableAuto(listType) {
 
 }
 // ------------------------------
+
+
 
 
 
