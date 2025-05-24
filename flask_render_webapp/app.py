@@ -27,8 +27,8 @@ from .process import (
     bar_chart, line_chart, pie_chart
 )
 
-from . import mapper
-# from .mapper import (mapper_data, master)
+# from . import mapper
+from .mapper import (mapper_data, master)
 
 
 app = Flask(__name__)
