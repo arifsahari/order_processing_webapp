@@ -191,52 +191,88 @@ function printTableDesktop(result, listType, selectedBatch) {
 // ------------------------------
 // Mobile Print
 
+// function printTableMobile(result, listType, selectedBatch) {
+//     const table = contentPrintTable(result, listType, selectedBatch);
+// 
+//     let { displayListType, displayStoreType, dateStr, totalQty } = customTitle(result, listType);
+//     const title = `${displayListType.toUpperCase()} ${displayStoreType} ${dateStr} - ${selectedBatch}`;
+// 
+//     let iframe = document.createElement('iframe');
+//     iframe.style.display = 'none';
+//     document.body.appendChild(iframe);
+// 
+//     const style = `<style>${printStyle()}</style>`;
+//     const doc = iframe.contentDocument || iframe.contentWindow.document;
+//     doc.open();
+//     doc.write(`<html><head><title>${title}</title>${style}</head><body>`);
+//     doc.write(table.outerHTML);
+//     doc.write('</body></html>');
+//     doc.write(`
+//         <script>
+//             // Tunggu sehingga DOM siap
+//             window.onload = function() {
+//                 // Panggil fungsi highlightColumn jika ada
+//                 if (typeof highlightColumn === 'function') {
+//                     highlightColumn();
+//                 }
+// 
+//                 // Force print selepas gaya siap
+//                 setTimeout(() => {
+//                     window.focus();
+//                     window.print();
+//                 }, 300);
+//             };
+//         </script>
+//     `);
+//    doc.close();
+// 
+//     // setTimeout(() => {
+//     //     iframe.contentWindow.focus();
+//     //     iframe.contentWindow.print();
+//     //     setTimeout(() => document.body.removeChild(iframe), 2000);
+//     // }, 500);
+//     setTimeout(() => {
+//         document.body.removeChild(iframe);
+//     }, 3000);
+// }
+// ------------------------------
+
 function printTableMobile(result, listType, selectedBatch) {
-    const table = contentPrintTable(result, listType, selectedBatch);
+    const table = contentPrinTable(result, listType, selectedBatch);
 
     let { displayListType, displayStoreType, dateStr, totalQty } = customTitle(result, listType);
     const title = `${displayListType.toUpperCase()} ${displayStoreType} ${dateStr} - ${selectedBatch}`;
 
-    let iframe = document.createElement('iframe');
-    iframe.style.display = 'none';
-    document.body.appendChild(iframe);
+    // Buat container khas untuk styling print
+    const printableDiv = document.createElement('div');
+    printableDiv.id = 'printableArea';
+    printableDiv.style.fontFamily = 'Carlito, Calibri, sans-serif';
+    printableDiv.appendChild(table);
 
-    const style = `<style>${printStyle()}</style>`;
-    const doc = iframe.contentDocument || iframe.contentWindow.document;
-    doc.open();
-    doc.write(`<html><head><title>${title}</title>${style}</head><body>`);
-    doc.write(table.outerHTML);
-    doc.write('</body></html>');
-    doc.write(`
-        <script>
-            // Tunggu sehingga DOM siap
-            window.onload = function() {
-                // Panggil fungsi highlightColumn jika ada
-                if (typeof highlightColumn === 'function') {
-                    highlightColumn();
-                }
+    // Append ke body sementara untuk tangkap
+    document.body.appendChild(printableDiv);
 
-                // Force print selepas gaya siap
-                setTimeout(() => {
-                    window.focus();
-                    window.print();
-                }, 300);
-            };
-        </script>
-    `);
-    doc.close();
+    // Apply highlight styling secara langsung
+    const tds = printableDiv.querySelectorAll('td');
+    tds.forEach(td => {
+        const value = parseInt(td.textContent);
+        if (!isNaN(value) && value > 1 && td.innerText.toLowerCase().includes('qty')) {
+            td.style.backgroundColor = '#ffccbb';
+            td.style.fontWeight = 'bold';
+        }
+    });
 
-    // setTimeout(() => {
-    //     iframe.contentWindow.focus();
-    //     iframe.contentWindow.print();
-    //     setTimeout(() => document.body.removeChild(iframe), 2000);
-    // }, 500);
-    setTimeout(() => {
-        document.body.removeChild(iframe);
-    }, 3000);
+    // Convert to PDF
+    html2pdf().from(printableDiv).set({
+        margin: 0.3,
+        filename: `${title}.pdf`,
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+    // }).save().then(() => {
+    }).outputPdf('dataurlnewwindo').then(() => {    
+        document.body.removeChild(printableDiv); // cleanup
+    });
 }
-// ------------------------------
-
 
 // ------------------------------
 // Main Function Print
