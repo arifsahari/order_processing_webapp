@@ -1,51 +1,26 @@
-
-
-// ------------------------------
-// Main Function Print
-
-function printTableAuto(listType) {
-    let batchDropdown = document.getElementById('batchListDropdown');
-    let selectedBatch = batchDropdown && batchDropdown ? parseInt(batchDropdown.value) : 0;
-    // let selectedBatch = batchDropdown ? parseInt(batchDropdown.value) : 0;
-
-    fetch(`/print_table/${listType}?batch=${selectedBatch}`)
-        .then(response => response.json())
-        .then(result => {
-            if (!result || !Array.isArray(result.data)) {
-                alert('Invalid print data format.');
-                console.error('Response:', result);
-                return;
-            }
-
-            if (window.innerWidth < 768) {
-                printTableMobile(result, listType, selectedBatch);
-            } else {
-                printTableDesktop(result, listType, selectedBatch);
-            }
-        })
-        .catch(error => {
-            alert('Failed to print table.');
-            console.error('Print Error:', error);
-        });
-
-}
+// print_setup.js
 
 
 
 // ------------------------------
-// Print Contents
+// Function : Set Print Contents
 
 function contentPrinTable(result, listType, selectedBatch) {
     let columns = result.columns;
     let data = result.data;
 
-    let today = new Date();
-    let dateStr = today.toLocaleDateString('en-MY');
+    if (data.length === 0) {
+        alert('No data found for selected batch.');
+        return;
+    }
 
-    let totalQty = data.reduce((sum, row) => {
-        let qtyKey = Object.keys(row).find(k => k.toLowerCase() === 'qty' || k.toLowerCase() === 'quantity');
-        return sum + (parseInt(row[qtyKey]) || 0);
-    }, 0);
+    let { displayListType, displayStoreType, dateStr, totalQty } = customTitle(result, listType);
+
+    // // Set formatting
+    // let totalQty = data.reduce((sum, row) => {
+    //     let qtyKey = Object.keys(row).find(k => k.toLowerCase() === 'qty' || k.toLowerCase() === 'quantity');
+    //     return sum + (parseInt(row[qtyKey]) || 0);
+    // }, 0);
 
     let table = document.createElement('table');
     table.className = listType + '-table';
@@ -56,7 +31,8 @@ function contentPrinTable(result, listType, selectedBatch) {
     let customHeaderCell = document.createElement('th');
     customHeaderCell.colSpan = columns.length;
     customHeaderCell.className = 'custom-header-row';
-    customHeaderCell.innerText = `${listType.toUpperCase()} ${dateStr} : ${selectedBatch} (${totalQty} item)`;
+    // customHeaderCell.innerText = `${listType.toUpperCase()} ${dateStr} : ${selectedBatch} (${totalQty} item)`;
+    customHeaderCell.innerText = `${displayListType.toUpperCase()} ${displayStoreType} ${dateStr} : [${selectedBatch}] [${totalQty} item]`;
 
     customHeaderRow.appendChild(customHeaderCell);
     thead.appendChild(customHeaderRow);
@@ -91,9 +67,11 @@ function contentPrinTable(result, listType, selectedBatch) {
 
     return table;
 }
+// ------------------------------
+
 
 // ------------------------------
-// Set print style
+// Function : Set Print Style
 
 function printStyle() {
     return `
@@ -138,7 +116,138 @@ function printStyle() {
 
     `;
 }
+// ------------------------------
 
+
+// ------------------------------
+// Function : Set Custom Header and Title
+
+function customTitle(result, listType) {
+    let data = result.data;
+
+    let typeList = {
+        picklist: 'PL',
+        orderlist: 'OL'
+    };
+    let displayListType = typeList[listType.toLowerCase()] || listType;
+
+    // Set Mapping Store Type
+    let typeStore = {
+        none: '',
+        website: 'Web',
+        marketplace: 'MP'
+    };
+    let valueStore = getRadioValue('filterPlatform') || 'none';
+    let displayStoreType = typeStore[valueStore];
+
+    // Set Date
+    let today = new Date();
+    let dateStr = today.toLocaleDateString('en-MY'); // DD/MM/YYYY
+    // let day = String(today.getDate()).padStart(2, '0');
+    // let month = String(today.getMonth() + 1).padStart(2, '0');
+    // let year = today.getFullYear();
+    // let dateStr = `${day}/${month}/${year}`;
+
+    // Set formatting
+    let totalQty = data.reduce((sum, row) => {
+        let qtyKey = Object.keys(row).find(k => k.toLowerCase() === 'qty' || k.toLowerCase() === 'quantity');
+        return sum + (parseInt(row[qtyKey]) || 0);
+    }, 0);
+
+    return { displayListType, displayStoreType, dateStr, totalQty };
+}
+// ------------------------------
+
+
+// Use the helper
+let { displayListType, displayStoreType, dateStr, totalQty } = getPrintTableInfo(result, listType);
+
+
+// ------------------------------
+// Function : Desktop Print
+
+function printTableDesktop(result, listType, selectedBatch) {
+    const table = contentPrinTable(result, listType, selectedBatch);
+
+    let { displayListType, displayStoreType, dateStr, totalQty } = customTitle(result, listType);
+    const title = `${displayListType.toUpperCase()} ${displayStoreType} ${dateStr} - ${selectedBatch}`;
+
+    const style = `<style>${printStyle()}</style>`;
+    let printWindow = window.open('', '', 'width=2000,height=1000');
+    printWindow.document.write(`<html><head><title>${title}</title>${style}</head><body>`);
+    printWindow.document.write(table.outerHTML);
+    printWindow.document.write('</body></html>');
+    printWindow.document.close();
+    printWindow.print();
+}
+// ------------------------------
+
+
+// ------------------------------
+// Function : Mobile Print
+
+function printTableMobile(result, listType, selectedBatch) {
+    const table = contentPrinTable(result, listType, selectedBatch);
+
+    let { displayListType, displayStoreType, dateStr, totalQty } = customTitle(result, listType);
+    const title = `${displayListType.toUpperCase()} ${displayStoreType} ${dateStr} - ${selectedBatch}`;
+
+    let iframe = document.createElement('iframe');
+    iframe.style.display = 'none';
+    document.body.appendChild(iframe);
+
+    const style = `<style>${printStyle()}</style>`;
+    const doc = iframe.contentDocument || iframe.contentWindow.document;
+    doc.open();
+    doc.write(`<html><head><title>${title}</title>${style}</head><body>`);
+    doc.write(table.outerHTML);
+    doc.write('</body></html>');
+    doc.close();
+
+    setTimeout(() => {
+        iframe.contentWindow.focus();
+        iframe.contentWindow.print();
+        setTimeout(() => document.body.removeChild(iframe), 2000);
+    }, 500);
+}
+// ------------------------------
+
+
+// ------------------------------
+// Main Function : Print 
+
+function printTableAuto(listType) {
+    let batchDropdown = document.getElementById('batchListDropdown');
+    let selectedBatch = batchDropdown && batchDropdown ? parseInt(batchDropdown.value) : 0;
+    // let selectedBatch = batchDropdown ? parseInt(batchDropdown.value) : 0;
+
+    fetch(`/print_table/${listType}?batch=${selectedBatch}`)
+        .then(response => response.json())
+        .then(result => {
+            if (!result || !Array.isArray(result.data)) {
+                alert('Invalid print data format.');
+                console.error('Response:', result);
+                return;
+            }
+
+            if (window.innerWidth < 768) {
+                printTableMobile(result, listType, selectedBatch);
+            } else {
+                printTableDesktop(result, listType, selectedBatch);
+            }
+        })
+        .catch(error => {
+            alert('Failed to print table.');
+            console.error('Print Error:', error);
+        });
+
+}
+// ------------------------------
+
+
+
+
+// ------------------------------
 
 // // Fungsi untuk buka print window (desktop)
 // function openPrintWindow(title, content) {
@@ -169,55 +278,3 @@ function printStyle() {
 //         setTimeout(() => document.body.removeChild(iframe), 2000);
 //     }, 500);
 // }
-
-
-// ------------------------------
-// Desktop Print
-
-function printTableDesktop(result, listType, selectedBatch) {
-    const table = contentPrinTable(result, listType, selectedBatch);
-
-    let today = new Date();
-    let dateStr = today.toLocaleDateString('en-MY');
-    const title = `${listType.toUpperCase()} ${dateStr} - Batch ${selectedBatch}`;
-
-    // openPrintWindow(title, table.outerHTML);
-    const style = `<style>${printStyle()}</style>`;
-    let printWindow = window.open('', '', 'width=2000,height=1000');
-    printWindow.document.write(`<html><head><title>${title}</title>${style}</head><body>`);
-    printWindow.document.write(table.outerHTML);
-    printWindow.document.write('</body></html>');
-    printWindow.document.close();
-    printWindow.print();
-}
-
-
-// ------------------------------
-// Mobile Print
-
-function printTableMobile(result, listType, selectedBatch) {
-    const table = contentPrinTable(result, listType, selectedBatch);
-
-    let today = new Date();
-    let dateStr = today.toLocaleDateString('en-MY');
-    const title = `${listType.toUpperCase()} ${dateStr} - Batch ${selectedBatch}`;
-
-    // openPrintIframe(title, table.outerHTML);
-    let iframe = document.createElement('iframe');
-    iframe.style.display = 'none';
-    document.body.appendChild(iframe);
-
-    const style = `<style>${printStyle()}</style>`;
-    const doc = iframe.contentDocument || iframe.contentWindow.document;
-    doc.open();
-    doc.write(`<html><head><title>${title}</title>${style}</head><body>`);
-    doc.write(table.outerHTML);
-    doc.write('</body></html>');
-    doc.close();
-
-    setTimeout(() => {
-        iframe.contentWindow.focus();
-        iframe.contentWindow.print();
-        setTimeout(() => document.body.removeChild(iframe), 2000);
-    }, 500);
-}
