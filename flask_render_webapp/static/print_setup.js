@@ -254,13 +254,17 @@ function printTableMobile(result, listType, selectedBatch) {
         jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
     };
 
-    html2pdf().set(opt).from(wrapper).outputPdf('bloburl').then((blobUrl) => {
-        const win = window.open(blobUrl);
+    // html2pdf().set(opt).from(wrapper).outputPdf('bloburl').then((blobUrl) => {
+    //     const win = window.open(blobUrl);
+    //     document.body.removeChild(wrapper);
+    //     if (win) {
+    //         win.focus();
+    //         win.print();
+    //     }
+    // });
+
+    html2pdf().set(opt).from(wrapper).save().then(() => {
         document.body.removeChild(wrapper);
-        if (win) {
-            win.focus();
-            win.print();
-        }
     });
 }
 
