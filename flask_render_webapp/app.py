@@ -28,8 +28,9 @@ from .process import (
 )
 
 # from . import mapper
-from .mapper import (mapper_data, master)
-
+# from .mapper import (mapper_data, master)
+import mapper.master
+import mapper.mapper_data
 
 app = Flask(__name__)
 app.register_blueprint(process_blueprint, url_prefix='/process')
