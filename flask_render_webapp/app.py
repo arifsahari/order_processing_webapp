@@ -636,7 +636,7 @@ def index():
     year = pd.Timestamp.now().year
     TRADEMARK = f'©{year} Order Processing Web App - developed by Arep.'
     RIGHTS = 'All rights reserved.'
-    return render_template('index.html', trademark=TRADEMARK, rights=RIGHTS)
+    return render_template('index.html', trademark=TRADEMARK, right=RIGHTS)
 
 
 # Route : Designs list
