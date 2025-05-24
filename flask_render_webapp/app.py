@@ -1,31 +1,30 @@
 # app.py
 
-"""""""""""""""""
-Import Library
-"""""""""""""""""
+""""""""""""""""""""""""""""""
+# FILE: app.py
+""""""""""""""""""""""""""""""
 
-from flask import Flask, render_template, request, jsonify, send_file, redirect, url_for
+# ========== Import Requirements ==========
+
+# Library
+from flask import Flask, render_template, request, jsonify, send_file, url_for
 from werkzeug.utils import secure_filename
 from collections import OrderedDict
-import pandas as pd
-import numpy as np
 import os
+import pandas as pd
 import json
+import openpyxl
 
-# from process import *
-# import mapper.master
-# import mapper.mapper_data
-
-
+# Custom Module
 from .process import (
-    set_filter, ensure_folder_exists, process_blueprint,
-    process_step_a, process_step_b,
-    assign_order_sequence, assign_order_sequence_batch,
+    process_blueprint, set_filter, ensure_folder_exists, allowed_file,
+    process_step_a, process_step_b, assign_order_sequence, assign_order_sequence_batch,
     get_picklist_batch, get_orderlist_batch, load_filtered_data,
     assign_all_batch, dropdown_all_batch, picklist, orderlist,
     data_overview, generate_list, get_latest_folder, latest_tracking_files,
     process_abx, process_sf, process_nv, export_file, awb_ninjavan,
-    awb_abx, awb_sf, scan_mp, scan_web, tracking_update, order_mark
+    awb_abx, awb_sf, scan_mp, scan_web, tracking_update, order_mark,
+    bar_chart, line_chart, pie_chart
 )
 
 from . import mapper
@@ -35,27 +34,36 @@ from . import mapper
 app = Flask(__name__)
 app.register_blueprint(process_blueprint, url_prefix='/process')
 
-# Global Variables
+
+# ========== Configuration ==========
+
+# Directories
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 UPLOAD_FOLDER = os.path.join(BASE_DIR, 'uploads')
 DOWNLOAD_FOLDER = os.path.join(BASE_DIR, 'downloads')
 EXPORT_FOLDER = os.path.join(BASE_DIR, 'exports')
-MAPPER_FOLDER = os.path.join(BASE_DIR, 'mapper')
+MAPPER_FOLDER = os.path.join(BASE_DIR, 'mapper', 'csv')
 ALLOWED_EXTENSIONS = {'csv', 'xlsx'}
 
+# Convert to True Directories
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['DOWNLOAD_FOLDER'] = DOWNLOAD_FOLDER
 app.config['EXPORT_FOLDER'] = EXPORT_FOLDER
+app.config['MAPPER_FOLDER'] = MAPPER_FOLDER
 
-
-# Data from master and mapper
+# Data for mapping
 DF_MASTER = pd.DataFrame(mapper.master.get_master_data()).copy()
 SHIPPER = pd.DataFrame(mapper.mapper_data.get_courier_state_data()).copy()
 SIZE = pd.DataFrame(mapper.mapper_data.get_size_data()).copy()
 
 # Variables
 FILTER = None
+PL = None
+OL = None
 BATCH = None
+
+PATHFILE_A = os.path.join(DOWNLOAD_FOLDER, 'order_step_a.csv')
+PATHFILE_B = os.path.join(DOWNLOAD_FOLDER, 'order_step_b.csv')
 
 # Create folder to contain files
 if not os.path.exists(UPLOAD_FOLDER):
@@ -65,10 +73,8 @@ if not os.path.exists(DOWNLOAD_FOLDER):
 if not os.path.exists(EXPORT_FOLDER):
     os.makedirs(EXPORT_FOLDER, exist_ok=True)
 
-# Function : check for allowed files
-def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
+# ========== Utility ==========
 
 # Function : check for latest files from upload folder
 def get_latest_file():
@@ -110,28 +116,9 @@ def get_latest_file():
 """
 
 
-"""""""""""""""""
-Route
-"""""""""""""""""
+# ========== Routes ==========
 
-# Endpoint : Upload files
-"""
-# @app.route('/upload', methods=['POST'])
-# def upload_file():
-#     if 'file' not in request.files:
-#         return jsonify({'message': 'No file part'})
-#     file = request.files['file']
-
-#     if file.filename == '':
-#         return jsonify({'message': 'No selected file'})
-
-#     if file and allowed_file(file.filename):
-#         file_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
-#         file.save(file_path)
-#         return jsonify({'message': 'File uploaded successfully'})
-#     return jsonify({'message': 'Invalid file format'})
-"""
-
+# Route : Upload files
 @app.route('/upload', methods=['POST'])
 def upload_file():
     if 'file' not in request.files or 'folder' not in request.form:
@@ -164,38 +151,51 @@ def upload_file():
 
     return jsonify({'success': False, 'message': 'Invalid file format'})
 
+# """
+# # @app.route('/upload', methods=['POST'])
+# # def upload_file():
+# #     if 'file' not in request.files:
+# #         return jsonify({'message': 'No file part'})
+# #     file = request.files['file']
 
-# # Endpoint : Download files
-# @app.route('/download', methods=['GET'])
-# def download_file():
-#     files = os.listdir(EXPORT_FOLDER)
-#     return render_template('download.html', files=files)
+# #     if file.filename == '':
+# #         return jsonify({'message': 'No selected file'})
+
+# #     if file and allowed_file(file.filename):
+# #         file_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
+# #         file.save(file_path)
+# #         return jsonify({'message': 'File uploaded successfully'})
+# #     return jsonify({'message': 'Invalid file format'})
+# """
 
 
-"""""""""""""""""
-Endpoint for Data Processing
-"""""""""""""""""
-# Endpoint : Data processing after files uploaded
+"""
+Route for Data Processing
+"""
+
+# Route : Processing Data after files uploaded
 @app.route('/process_step_a', methods=['GET'])
 def process_uploaded_file():
+    global step_a
     latest_file = get_latest_file()
+    print(f'[Process Uploaded File] : Received latest file: {latest_file}')
+    
     if not latest_file:
-        return jsonify({
-            'status': 'error', 'message': 'No uploaded files found'})
+        return jsonify({'status': 'error', 'message': 'No uploaded files found'})
     try:
-        output_file = os.path.join(DOWNLOAD_FOLDER, 'order_step_a.csv')
+        # output_file = os.path.join(DOWNLOAD_FOLDER, 'order_step_a.csv')
+        if os.path.exists(PATHFILE_A):
+            os.remove(PATHFILE_A)
+            print(f'[Process Uploaded File] : Deleted old file: {PATHFILE_A}')
 
-        if os.path.exists(output_file):
-            os.remove(output_file)
-            print(f'{process_uploaded_file.__name__} : Delete old file: {output_file}')
         if latest_file.endswith('.csv'):
             df = pd.read_csv(latest_file, encoding='utf-8', errors='replace')
         else:
-            df = pd.read_excel(latest_file)
-        print(f'{process_uploaded_file.__name__} : File Loaded: {latest_file}, Columns: {df.columns.tolist()}')
+            df = pd.read_excel(latest_file, engine='openpyxl')
+        print(f'[Process Uploaded File] : File Loaded: {latest_file}, Columns: {df.columns.tolist()}')
 
     except Exception as e:
-        print(f'{process_uploaded_file.__name__} : Error reading file: {str(e)}')
+        print(f'[Process Uploaded File] : Error reading file: {str(e)}')
         return jsonify({
             'status': 'error', 'message': f'Error reading file: {str(e)}'})
 
@@ -203,40 +203,39 @@ def process_uploaded_file():
 
     # return processed data as JSON
     if step_a is None or step_a.empty:
-        print(f'{process_uploaded_file.__name__} : Processing failed! Data is empty.')
-        # return jsonify({
-        #     'status': 'success', 'step_a': step_a.to_dict(orient='records')})
+        print(f'[Process Uploaded File] : Processing failed! Data is empty.')
         return jsonify({'status': 'success', 'step_a': []})
 
     try:
-        step_a.to_csv(output_file, index=False, encoding='utf-8')
-        print(f'{process_uploaded_file.__name__} : Processed file saved: {output_file}')
+        step_a.to_csv(PATHFILE_A, index=False, encoding='utf-8')
+        print(f'[Process Uploaded File] : Processed file saved: {PATHFILE_A}')
         """
         # # Upload hasil ke Supabase folder 'downloads'
         # upload_to_supabase(output_file, 'downloads', 'order_step_a.csv')
         """
     except Exception as e:
-        print(f'{process_uploaded_file.__name__} : Error saving processed file: {str(e)}')
+        print(f'[Process Uploaded File] : Error saving processed file: {str(e)}')
         return jsonify({
             'status': 'error', 'message': f'Error saving processed file: {str(e)}'})
 
     return jsonify({
         'status': 'success', 'message': 'File processed and saved.',
-        'file': output_file})
+        'file': PATHFILE_A})
 
 
-"""""""""""""""""
-Endpoint for Data Filtering
-"""""""""""""""""
-# Endpoint : Filter data after processed
+"""
+Route for Data Filtering
+"""
+
+# Route : Filtering data after processed
 @app.route('/process_step_b', methods=['POST'])
 def process_filtered_data():
+    global step_b
     data = request.get_json()
-    print(f'{process_filtered_data.__name__} : Received Data: {data}')
+    print(f'[Process Filtered Data] : Received data: {data}')
+
     if not data:
-        return jsonify({
-            'status': 'error',
-            'message': 'No filtered files foud'})
+        return jsonify({'status': 'error', 'message': 'No filtered files foud'})
 
     selected_design = data.get('designs', [])
     filter_design = data.get('filter_design', 'none')
@@ -252,79 +251,69 @@ def process_filtered_data():
         )
     step_b['Batch'] = 1
 
-    # df = step_b.copy()
-    # df['__filter_option__'] = filter_design
-    # df['__filter_designs__'] = ','.join(selected_design)
-
-    # FILTER = df
-
     # return processed data as JSON
     if step_b is None or step_b.empty:
-        print(f'{process_filtered_data.__name__} : Error: No data found after filtering!')
+        print(f'[Process Filtered Data] : No data found after filtering!')
         return jsonify({
-            'status': 'error',
-            'message': 'No data found after filtering'})
+            'status': 'error', 'message': 'No data found after filtering'})
     # return jsonify({'status': 'success', 'filtered_data': step_b.to_dict(orient='records')})
     
-    os.makedirs(DOWNLOAD_FOLDER, exist_ok=True)
-    output_file = os.path.join(DOWNLOAD_FOLDER, 'order_step_b.csv')
-
     try:
-        step_b.to_csv(output_file, index=False, encoding='utf-8')
-        print(f'{process_filtered_data.__name__} : Processed file saved: {output_file}')
+        step_b.to_csv(PATHFILE_B, index=False, encoding='utf-8')
+        print(f'[Process Filtered Data] : Processed file saved: {PATHFILE_B}')
 
     except Exception as e:
-        print(f'{process_filtered_data.__name__} : Error saving processed file: {str(e)}')
-        return jsonify({'status': 'error', 'message': f'Error saving processed file: {str(e)}'})
+        print(f'[Process Filtered Data] : Error saving processed file: {str(e)}')
+        return jsonify({
+            'status': 'error', 'message': f'Error saving processed file: {str(e)}'})
 
-    return jsonify({'status': 'success', 'message': 'File processed and saved successfully.', 'file': output_file})
+    return jsonify({
+        'status': 'success', 'message': 'File processed and saved successfully.',
+        'file': PATHFILE_B})
 
 
-"""""""""""""""""
-Endpoint for List Generation
-"""""""""""""""""
-# Endpoint : Generate data after filtered
+"""
+Route for List Generation
+"""
+
+# Route : Generate list of data after filtered
 @app.route('/list', methods=['POST'])
 def process_generate_list():
-    global FILTER
     data = request.get_json()
-    print(f'{process_generate_list.__name__} : Received Data: {data}')
+    print(f'[Process Generate List] : Received data: {data}')
+
     if not data:
-        return jsonify({
-            'status': 'error',
-            'message': 'No files found'})
+        return jsonify({ 'status': 'error', 'message': 'No files found'})
 
     option = data.get('options', '')
 
     generate = generate_list(option)
     if generate is None or generate.empty:
-        print(f'{process_generate_list.__name__} : Error: No data found to generate list')
+        print(f'[Process Generate List] : Error: No data found to generate list')
         return jsonify({
-            'status': 'error',
-            'message': 'No data found to generate list'})
+            'status': 'error', 'message': 'No data found to generate list'})
 
     output_file = os.path.join(DOWNLOAD_FOLDER, f'{option}.csv')
-    os.makedirs(DOWNLOAD_FOLDER, exist_ok=True)
+
     try:
         generate.to_csv(output_file, index=False, encoding='utf-8')
-        print(f'{process_generate_list.__name__} : Processed file saved: {output_file}') # debug
+        print(f'[Process Generate List] : Processed file saved: {output_file}') # debug
     except Exception as e:
-        print(f'{process_generate_list.__name__} : Error saving processed file: {str(e)}') # debug
+        print(f'[Process Generate List] : Error saving processed file: {str(e)}') # debug
         return jsonify({
-            'status': 'error',
-            'message': f'Error saving processed file: {str(e)}'
-            })
+            'status': 'error', 'message': f'Error saving processed file: {str(e)}' })
+        
     return jsonify({
-        'status': 'success',
-        'message': f'{option.capitalize()} list processed and saved successfully.',
+        'status': 'success', 'message': f'{option.capitalize()} list processed and saved successfully.',
         'file': output_file
     })
 
 
-"""""""""""""""""
-Endpoint for Data Grouping
-"""""""""""""""""
-# Endpoint : Batch data after filtered
+"""
+Route for Data Grouping
+"""
+
+# Route : Batch data after filtered
 @app.route('/batch', methods=['GET'])
 def process_batch():
     global BATCH
@@ -333,24 +322,19 @@ def process_batch():
     min_last_batch_size = int(request.args.get('min_last_batch_size', 30))
 
     try:
-        min_last_batch_size
-        #  = int(min_last_batch_size)
+        min_last_batch_size = int(min_last_batch_size)
     except (ValueError, TypeError):
         min_last_batch_size = 30
         return jsonify({'error': 'Invalid min_last_batch_size'}), 400
 
-    csv_path = os.path.join(DOWNLOAD_FOLDER, 'order_step_b.csv')
-
-    if os.path.exists(csv_path):
+    if os.path.exists(PATHFILE_B):
         try:
-            # df = pd.read_csv(csv_path, encoding='utf-8')
-            BATCH = pd.read_csv(csv_path, encoding='utf-8')
+            BATCH = pd.read_csv(PATHFILE_B, encoding='utf-8', low_memory=False)
         except Exception as e:
-            print(f'{process_batch.__name__} : Error reading CSV: {e}')
+            print(f'[Process Batch Data] : Error reading CSV: {e}')
             return jsonify({'status': 'error', 'message': 'Error reading CSV'}), 500
     else:
         return jsonify({'status': 'error', 'message': 'No data available'}), 404
-
     try:
         BATCH = assign_all_batch(BATCH,
                                 min_last_batch_size=min_last_batch_size,
@@ -358,33 +342,58 @@ def process_batch():
         dropdown = dropdown_all_batch(BATCH, filter_batch)
         dropdown_value = [{
             'label': b['label'],
-            'value': int(b['value'])} for b in dropdown]
+            # 'value': int(b['value'])} for b in dropdown]
+            # 'value': int(b['value']) if pd.notna(b['value']) else 0} for b in dropdown]
+            'value': int(b['value'])} for b in dropdown if pd.notna(b['value'])]
 
     except Exception as e:
         import traceback
-        print(f'{process_batch.__name__} : Error in /batch: {e}')
+        print(f'[Process Batch Data] : Error in /batch: {e}')
         traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
-    output_file = os.path.join(DOWNLOAD_FOLDER, 'order_step_b.csv')
-    BATCH.to_csv(output_file, index=False, encoding='utf-8')
-
+    BATCH.to_csv(PATHFILE_B, index=False, encoding='utf-8')
     return jsonify({'status': 'success', 'batches': dropdown_value})
 
 
-"""""""""""""""""
-Endpoint for Data Printing
-"""""""""""""""""
-# Endpoint : Print data after filtered
+"""
+Route for Exporting Output
+"""
+
+# Route : Export data after filtered
+@app.route('/export', methods=['POST'])
+def process_export_file():
+    global FILTER
+    if FILTER is None or FILTER.empty:
+        print(f'[Process Export File] : File is empty ! Looking at:, {PATHFILE_B}')
+
+    try:
+        # output_file = os.path.join(DOWNLOAD_FOLDER, 'order_step_b.csv')
+        if os.path.exists(PATHFILE_B):
+            FILTER = pd.read_csv(PATHFILE_B, encoding='utf-8', low_memory=False)
+        else:
+            return jsonify({'status': 'error', 'message': 'No data to export'})
+
+        exported_files = export_file(FILTER)
+        return jsonify({'status': 'success', 'files': exported_files})
+
+    except Exception as e:
+        return jsonify({'status': 'error','message': str(e)})
+
+
+"""
+Route for Data Printing
+"""
+
+# Route : Print table after filtered
 @app.route('/print_table/<list_type>', methods=['GET'])
 def print_table_data(list_type):
     batch_no = request.args.get('batch', default=0, type=int)
     global BATCH
 
     if BATCH is None or BATCH.empty:
-        csv_path = os.path.join(DOWNLOAD_FOLDER, 'order_step_b.csv')
-        if os.path.exists(csv_path):
-            BATCH = pd.read_csv(csv_path, encoding='utf-8')
+        if os.path.exists(PATHFILE_B):
+            BATCH = pd.read_csv(PATHFILE_B, encoding='utf-8', low_memory=False)
 
     df = BATCH.copy()
     if batch_no > 0:
@@ -402,19 +411,17 @@ def print_table_data(list_type):
     try:
         df = df[columns].fillna('')
         records = [OrderedDict((col, row[col]) for col in df.columns) for _, row in df.iterrows()]
-        return jsonify({
-            'columns': columns,
-            'data': records
-        })
+        return jsonify({'columns': columns, 'data': records})
 
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)})
 
 
-"""""""""""""""""
-Endpoint for Data Viewing
-"""""""""""""""""
-# Endpoint : View data after filtered
+"""
+Route for Data Viewing
+"""
+
+# Route : View data after filtered
 @app.route('/view_data/<folder>/<path:filename>', methods=['GET'])
 def view_data(folder, filename):
     base_folder = {
@@ -448,7 +455,7 @@ def view_data(folder, filename):
 
         return df.to_json(orient='records')
     except Exception as e:
-        print(f'{view_data.__name__} : Error loading {filename}: {str(e)}')
+        print(f'[View Data] : Error loading {filename}: {str(e)}')
         return jsonify({'error': str(e)})
 
 """
@@ -473,33 +480,9 @@ def view_data(filename):
 """
 
 
-"""""""""""""""""
+"""
 Endpoint for Exporting Output
-"""""""""""""""""
-# Endpoint : Export data after filtered
-@app.route('/export', methods=['POST'])
-def process_export_file():
-    global FILTER
-    if FILTER is None or FILTER.empty:
-        print(f'{process_export_file.__name__} : FILTER is empty !')
-        FILTER = os.path.join(DOWNLOAD_FOLDER,'order_step_b.csv')
-        
-    csv_path = os.path.join(DOWNLOAD_FOLDER, 'order_step_b.csv')
-    
-    if os.path.exists(csv_path):
-        FILTER = pd.read_csv(csv_path, encoding='utf-8', low_memory=False)
-    else:
-        return jsonify({
-            'status': 'error', 'message': 'No data to export'})
-        
-    try:
-        file_paths = export_file(FILTER)
-        return jsonify({
-            'status': 'success', 'files': file_paths})
-    except Exception as e:
-        return jsonify({
-            'status': 'error','message': str(e)})
-        # return send_file(file_path, as_attachment=True)
+"""
 
 
 @app.route('/export_ordermark', methods=['POST'])
@@ -510,137 +493,144 @@ def generate_filtered_orders():
     label = data.get('label', '')
 
     try:
-        # df = FILTER.copy()
-
-        csv_path = os.path.join(DOWNLOAD_FOLDER, 'order_step_b.csv').copy()
-        if os.path.exists(csv_path):
-            df = pd.read_csv(csv_path, encoding='utf-8')
+        if os.path.exists(PATHFILE_B):
+            df = pd.read_csv(PATHFILE_B, encoding='utf-8', low_memory=False)
             if df is None or df.empty:
-                print(f'{generate_filtered_orders.__name__} : FILTER is empty !')
+                print(f'[Generate Filtered Orders] : FILTER is empty !')
         else:
             return jsonify({'status': 'error', 'message': 'No data to export'})
 
-        filtered = order_mark(df, selected_design, filter_design)
+        ordermark = order_mark(df, selected_design, filter_design)
 
-        return jsonify({'status': 'success', 'file': filtered})
-
+        return jsonify({'status': 'success', 'file': ordermark})
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
 
-"""""""""""""""""
-Endpoint for Chart Data
-"""""""""""""""""
-# Endpoint : Chart data for visualization
-# @app.route('/chartdata')
-# def chartdata():
-#     csv_path = os.path.join(DOWNLOAD_FOLDER, 'order_step_b.csv')
-#     if not os.path.exists(csv_path):
-#         return jsonify({'status': 'error', 'message': 'CSV file not found'})
-
-#     df = pd.read_csv(csv_path, encoding='utf-8')
-#     df_grouped = df.copy()
-#     if 'Store' not in df.columns:
-#         return jsonify({'status': 'error', 'message': 'Missing "Store" column'})
-
-#     # Group dan kira
-#     # df_grouped = df.groupby(['Platform', 'Design'])['Order No'].nunique().reset_index(name='Total Orders')
-#     df_grouped = df.groupby(['Design'])['Quantity'].sum().reset_index(name='Total Orders')
-#     # df_grouped = df.groupby(['Design'])['Order No'].nunique().reset_index(name='Total Orders')
-#     df_grouped = df_grouped.sort_values(by='Total Orders', ascending=False)[:20]
-
-#     df_grouped['Design'] = df_grouped['Design'].replace({
-#         'TIK': 'TikTok', 'SHO': 'Shopee', 'ZAL': 'Zalora','LAZ': 'Lazada',
-#         'WEB NV': 'Ninjavan', 'WEB AB': 'ABX', 'WEB SF': 'SF Express',
-#         'WEB OS': 'Oversea', 'WEB SP': 'Self Pickup'
-#     })
-
-#     df_grouped = df_grouped[['Design', 'Total Orders']]
-
-#     x = df_grouped['Design'].tolist()
-#     y = df_grouped['Total Orders'].tolist()
-
-#     return jsonify({'status': 'success', 'x': x, 'y': y})
-
-
-@app.route('/chartdata')
+"""
+Route for Chart Data
+"""
+# Route : Chart data for visualization
 def chartdata():
-    csv_path = os.path.join(DOWNLOAD_FOLDER, 'order_step_b.csv')
-    if not os.path.exists(csv_path):
+    chart_type = request.args.get('type', 'orders')
+    limit = request.args.get('bar_rank', default=None, type=int)
+
+    if not os.path.exists(PATHFILE_B):
         return jsonify({'status': 'error', 'message': 'CSV file not found'})
 
-    df = pd.read_csv(csv_path, encoding='utf-8')
+    df = pd.read_csv(PATHFILE_B, encoding='utf-8', low_memory=False)
     df_chart = df.copy()
 
-    # Group by
-    bar_order_sum = df_chart.groupby(['Store'])['Order No'].nunique().reset_index(name='Total Orders')
-    bar_order_sum = bar_order_sum.sort_values(by='Total Orders', ascending=False)
-    # bar_order_sum = df_chart.groupby(['Store'])['Quantity'].sum().reset_index(name='Total Orders')
-    bar_order_sum['Store'] = bar_order_sum['Store'].replace({
+    df_chart['Quantity'] = pd.to_numeric(df_chart['Quantity'], errors='coerce').astype('Int64')
+    df_chart['Order Time'] = pd.to_datetime(df_chart['Order Time'], errors='coerce').dt.strftime('%Y-%m-%d')
+    df_chart['Store'] = df_chart['Store'].replace({
         'TIK': 'TikTok', 'SHO': 'Shopee', 'ZAL': 'Zalora','LAZ': 'Lazada',
         'WEB NV': 'Ninjavan', 'WEB AB': 'ABX', 'WEB SF': 'SF Express',
         'WEB OS': 'Oversea', 'WEB SP': 'Self Pickup'
     })
 
-    bar_product_sum = df_chart.groupby(['Design'])['Order No'].nunique().reset_index(name='Total Orders')
-    bar_product_sum = bar_product_sum.sort_values(by='Total Orders', ascending=False)[:20]
 
-    bar_product_qty = df_chart.groupby(['Design'])['Quantity'].sum().reset_index(name='Total Orders')
-    bar_product_qty = bar_product_qty.sort_values(by='Total Orders', ascending=False)[:20]
+    if chart_type == 'order_summary':
+        result = bar_chart(
+            df_chart, x_col='Store', y_col='Order No', agg='nunique',
+            limit=limit, title='Order Summary')
+    elif chart_type == 'product_qty':
+        result = bar_chart(
+            df_chart, x_col='Design', y_col='Quantity', agg='sum',
+            limit=limit, title='Product by Qty')
+    elif chart_type == 'product_summary':
+        result = bar_chart(
+            df_chart, x_col='Design', y_col='Order No', agg='nunique',
+            limit=limit, title='Product by Order Count')
 
-    line_order_daily = df_chart.copy()
-    line_order_daily['Order Time'] = pd.to_datetime(line_order_daily['Order Time'], errors='coerce').dt.strftime('%Y-%m-%d')
-    line_order_daily = line_order_daily.groupby('Order Time')['Order No'].count().reset_index(name='Total Orders')
-    line_order_daily = line_order_daily.sort_values(by='Order Time', ascending=True)
+    elif chart_type == 'order_daily':
+        result = line_chart(
+            df_chart, x_col='Order Time', y_col='Order No', agg='count',
+            limit=None, title='Daily Order', time_rule='D')
+    elif chart_type == 'order_monthly':
+        result = line_chart(
+            df_chart, x_col='Order Time', y_col='Order No', agg='count',
+            limit=None, title='Monthly Order', time_rule='M')
+    else:
+        return jsonify({'status': 'fail', 'message': 'Unknown chart type'})
 
-    line_order_monthly = df_chart.copy()
-    line_order_monthly['Order Time'] = pd.to_datetime(line_order_monthly['Order Time'], errors='coerce').dt.strftime('%Y-%m')
-    line_order_monthly = line_order_monthly.groupby('Order Time')['Order No'].count().reset_index(name='Total Orders')
-    line_order_monthly = line_order_monthly.sort_values(by='Order Time', ascending=True)
+    return jsonify({'status': 'success', **result})
+
+# ---------------
+
+    """
+    # chart_type = request.args.get('type', 'orders')
+
+    # bar_order_sum = df_chart.groupby(['Store'])['Order No'].nunique().reset_index(name='Total Orders')
+    # bar_order_sum = bar_order_sum.sort_values(by='Total Orders', ascending=False)
+    # bar_order_sum['Store'] = bar_order_sum['Store'].replace({
+    #     'TIK': 'TikTok', 'SHO': 'Shopee', 'ZAL': 'Zalora','LAZ': 'Lazada',
+    #     'WEB NV': 'Ninjavan', 'WEB AB': 'ABX', 'WEB SF': 'SF Express',
+    #     'WEB OS': 'Oversea', 'WEB SP': 'Self Pickup'
+    # })
+
+    # bar_product_sum = df_chart.groupby(['Design'])['Order No'].nunique().reset_index(name='Total Orders')
+    # bar_product_sum = bar_product_sum.sort_values(by='Total Orders', ascending=False)[:20]
+
+    # bar_product_qty = df_chart.groupby(['Design'])['Quantity'].sum().reset_index(name='Total Orders')
+    # bar_product_qty = bar_product_qty.sort_values(by='Total Orders', ascending=False)[:20]
+
+    # line_order_daily = df.copy()
+    # line_order_daily['Order Time'] = pd.to_datetime(line_order_daily['Order Time'], errors='coerce').dt.strftime('%Y-%m-%d')
+    # line_order_daily = line_order_daily.groupby('Order Time')['Order No'].count().reset_index(name='Total Orders')
+    # line_order_daily = line_order_daily.sort_values(by='Order Time', ascending=True)
+
+    # line_order_monthly = df.copy()
+    # line_order_monthly['Order Time'] = pd.to_datetime(line_order_monthly['Order Time'], errors='coerce').dt.strftime('%Y-%m')
+    # line_order_monthly = line_order_monthly.groupby('Order Time')['Order No'].count().reset_index(name='Total Orders')
+    # line_order_monthly = line_order_monthly.sort_values(by='Order Time', ascending=True)
 
     # Get necessary column
-    bar_product_qty = bar_product_qty[['Design', 'Total Orders']]
-    bar_product_sum = bar_product_sum[['Design', 'Total Orders']]
-    line_order_daily = line_order_daily[['Order Time', 'Total Orders']]
-    line_order_monthly = line_order_monthly[['Order Time', 'Total Orders']]
+    # bar_product_qty = bar_product_qty[['Design', 'Total Orders']]
+    # bar_product_sum = bar_product_sum[['Design', 'Total Orders']]
+    # line_order_daily = line_order_daily[['Order Time', 'Total Orders']]
+    # line_order_monthly = line_order_monthly[['Order Time', 'Total Orders']]
 
-    chart_type = request.args.get('type', 'orders')
+    # if chart_type == 'product_summary':
+    #     data = {
+    #         'status': 'success', 'title': 'Total Products by Order', 'label': 'Total',
+    #         'x': bar_product_sum['Design'].tolist(), 'y': bar_product_sum['Total Orders'].tolist()}
+    # elif chart_type == 'product_qty':
+    #     data = {
+    #         'status': 'success', 'title': 'Total Products by Quantity',
+    #         'x': bar_product_qty['Design'].tolist(), 'y': bar_product_qty['Total Orders'].tolist()}
+    # elif chart_type == 'order_summary':
+    # if chart_type == 'order_summary':
+    #     data = {
+    #         'status': 'success', 'title': 'Total Orders by Store', 'label': '',
+    #         'x': bar_order_sum['Store'].tolist(), 'y': bar_order_sum['Total'].tolist()}
+    # elif chart_type == 'order_daily':
+    # if chart_type == 'order_daily':
+    #     # generate revenue chart data
+    #     data = {
+    #         'status': 'success', 'title': 'Total Orders by Daily', 'label': 'Order',
+    #         'x': line_order_daily['Order Time'].tolist(), 'y': line_order_daily['Total Orders'].tolist()}
+    # elif chart_type == 'order_monthly':
+    #     # generate revenue chart data
+    #     data = {
+    #         'status': 'success', 'title': 'Total Orders by Monthly', 'label': 'Order',
+    #         'x': line_order_monthly['Order Time'].tolist(), 'y': line_order_monthly['Total Orders'].tolist()}
 
-    if chart_type == 'product_summary':
-        # generate orders chart data
-        # bar_product_sum = bar_chart(df_chart)
-        data = {
-            'status': 'success', 'title': 'Total Products by Order', 'label': 'Total',
-            'x': bar_product_sum['Design'].tolist(), 'y': bar_product_sum['Total Orders'].tolist() }
-    elif chart_type == 'product_qty':
-        data = {
-            'status': 'success', 'title': 'Total Products by Quantity',
-            'x': bar_product_qty['Design'].tolist(), 'y': bar_product_qty['Total Orders'].tolist() }
-    elif chart_type == 'order_summary':
-        # generate revenue chart data
-        data = {
-            'status': 'success', 'title': 'Total Orders by Store', 'label': '',
-            'x': bar_order_sum['Store'].tolist(), 'y': bar_order_sum['Total Orders'].tolist()}
-    elif chart_type == 'order_daily':
-        # generate revenue chart data
-        data = {
-            'status': 'success', 'title': 'Total Orders by Daily', 'label': 'Order',
-            'x': line_order_daily['Order Time'].tolist(), 'y': line_order_daily['Total Orders'].tolist()}
-    elif chart_type == 'order_monthly':
-        # generate revenue chart data
-        data = {
-            'status': 'success', 'title': 'Total Orders by Monthly', 'label': 'Order',
-            'x': line_order_monthly['Order Time'].tolist(), 'y': line_order_monthly['Total Orders'].tolist()}
+    # else:
+    #     data = { 'status': 'fail', 'message': 'Unknown chart type' }
 
-    else:
-        data = { 'status': 'fail', 'message': 'Unknown chart type' }
+    # return jsonify(data)
+    """
+# ---------------
 
-    return jsonify(data)
 
-"""""""""""""""""
+# ========== Page Routes ==========
+
+"""
 index.html
-"""""""""""""""""
-# Main page
+"""
+
+# Route : Main Page
 @app.route('/')
 def index():
     year = pd.Timestamp.now().year
@@ -649,7 +639,7 @@ def index():
     return render_template('index.html', trademark=TRADEMARK, rights=RIGHTS)
 
 
-# Route untuk senarai design
+# Route : Designs list
 @app.route('/design_list')
 def get_design_list():
     try:
@@ -669,7 +659,7 @@ def get_design_list():
         'designs_color': designs_color, 'designs_size': designs_size})
 
 
-# Route untuk papar table
+# Route to view table
 @app.route('/table', methods=['GET'])
 def get_table():
     list_type = request.args.get('listType')
@@ -684,10 +674,11 @@ def get_table():
     return jsonify({'status': 'success', 'html': df_filtered.to_html()})
 
 
-"""""""""""""""""
+"""
 list_file.html
-"""""""""""""""""
-# Route untuk simpan fail selepas dimuat naik
+"""
+
+# Route : Display list of uploaded files
 @app.route('/files', methods=['GET'])
 def list_files():
     categorized_files = {}
@@ -710,48 +701,21 @@ def list_files():
 
     return render_template('list_file.html', categorized_files=categorized_files)
 
-# @app.route('/delete_file/<filename>', methods=['POST'])
-# def delete_file(filename):
-#     file_path = os.path.join(UPLOAD_FOLDER, filename)
-#     if os.path.exists(file_path):
-#         os.remove(file_path)
-#         return jsonify({'status': 'success', 'message': f'File {filename} deleted'})
-#     return jsonify({'status': 'error', 'message': 'File not found'}), 404
 
-# # Route untuk delete fail
-# @app.route('/delete_file/<folder>/<filename>', methods=['POST'])
-# def delete_file(folder, filename):
-#     if folder == 'default':
-#         file_path = os.path.join(UPLOAD_FOLDER, filename)
-#     else:
-#         file_path = os.path.join(UPLOAD_FOLDER, folder, filename)
-
-#     if os.path.exists(file_path):
-#         os.remove(file_path)
-#         return jsonify({'status': 'success', 'message': f'File {filename} deleted from {folder} folder'})
-#     return jsonify({'status': 'error', 'message': f'File {filename} not found in {folder} folder'}), 404
-
-
-"""""""""""""""""
+"""
 list_download.html
-"""""""""""""""""
-# Endpoint : Download exported files
+"""
+# Route : Display list of downloadable files
 @app.route('/download', methods=['GET'])
 def list_download():
     files = os.listdir(EXPORT_FOLDER)
     return render_template('list_download.html', files=sorted(files))
 
-# # Endpoint : Download checkpoint files
-# @app.route('/checkpoint', methods=['GET'])
-# def list_checkpoint():
-#     files = os.listdir(DOWNLOAD_FOLDER)
-#     return render_template('list_checkpoint.html', files=files)
 
-
-
-"""""""""""""""""
+"""
 list_download.html & list_file.html
-"""""""""""""""""
+"""
+# Route : Delete file
 @app.route('/delete_file/<folder>/<path:filename>', methods=['POST'])
 def delete_file(folder, filename):
     folder_map = {
@@ -764,9 +728,28 @@ def delete_file(folder, filename):
     if not base_folder:
         return jsonify({'success': False, 'message': 'Invalid folder'}), 400
 
-    file_path = os.path.join(base_folder, filename)
+    # ----
+        # """
+        # file_path = os.path.join(base_folder, filename)
 
-    if not os.path.exists(file_path):
+        # if not os.path.exists(file_path):
+        #     return jsonify({'success': False, 'message': 'File not found'}), 404
+
+        # try:
+        #     os.remove(file_path)
+        #     return jsonify({'success': True, 'message': 'File deleted successfully'})
+        # except Exception as e:
+        #     return jsonify({'success': False, 'message': f'Failed to delete: {str(e)}'}), 500
+        # """
+    # ----
+
+    file_path = None
+    for root, dirs, files in os.walk(base_folder):
+        if filename in files:
+            file_path = os.path.join(root, filename)
+            break
+
+    if not file_path or not os.path.isfile(file_path):
         return jsonify({'success': False, 'message': 'File not found'}), 404
 
     try:
@@ -775,7 +758,33 @@ def delete_file(folder, filename):
     except Exception as e:
         return jsonify({'success': False, 'message': f'Failed to delete: {str(e)}'}), 500
 
+# ---------------
 
+    # """
+    # # @app.route('/delete_file/<folder>/<filename>', methods=['POST'])
+    # # def delete_file(folder, filename):
+    # #     if folder == 'default':
+    # #         file_path = os.path.join(UPLOAD_FOLDER, filename)
+    # #     else:
+    # #         file_path = os.path.join(UPLOAD_FOLDER, folder, filename)
+
+    # #     if os.path.exists(file_path):
+    # #         os.remove(file_path)
+    # #         return jsonify({'status': 'success', 'message': f'File {filename} deleted from {folder} folder'})
+    # #     return jsonify({'status': 'error', 'message': f'File {filename} not found in {folder} folder'}), 404
+
+    # # @app.route('/delete_file/<filename>', methods=['POST'])
+    # # def delete_file(filename):
+    # #     file_path = os.path.join(UPLOAD_FOLDER, filename)
+    # #     if os.path.exists(file_path):
+    # #         os.remove(file_path)
+    # #         return jsonify({'status': 'success', 'message': f'File {filename} deleted'})
+    # #     return jsonify({'status': 'error', 'message': 'File not found'}), 404
+
+    # """
+# ---------------
+
+# Route : Download file
 @app.route('/download_file/<folder>/<path:filename>')
 def download_file(folder, filename):
     folder_map = {
@@ -786,20 +795,35 @@ def download_file(folder, filename):
 
     base_folder = folder_map.get(folder)
     if not base_folder:
-        return 'Invalid folder', 400
+        return jsonify({'success': False, 'message': 'Invalid folder'}), 400
+    # ----
 
-    file_path = os.path.join(base_folder, filename)
+        # """
+        # file_path = os.path.join(base_folder, filename)
 
-    if not os.path.isfile(file_path):
-        return 'File not found', 404
+        # if not os.path.isfile(file_path):
+        #     return jsonify({'success': False, 'message': 'File not found'}), 404
+
+        # return send_file(file_path, as_attachment=True)
+        # """
+    # ----
+
+    file_path = None
+    for root, dirs, files in os.walk(base_folder):
+        if filename in files:
+            file_path = os.path.join(root, filename)
+            break
+
+    if not file_path or not os.path.isfile(file_path):
+        return jsonify({'success': False, 'message': 'File not found'}), 404
 
     return send_file(file_path, as_attachment=True)
 
 
-"""""""""""""""""
-scan.html
-"""""""""""""""""
-# # Route untuk cari tracking number
+"""
+scan_item.html
+"""
+# # Route : Tracking Number Search
 # @app.route('/search', methods=['POST'])
 # def search_tracking():
 #     data = request.get_json()
@@ -837,13 +861,15 @@ scan.html
 
 #     return jsonify({'status': 'found', 'results': result_data})
 
-# # Route untuk scan barcode
+# # Route : Barcode Scanning
 # @app.route('/scan_items')
 # def scan_items():
 #     tracking_number = request.args.get('tracking')
 #     items = orders.get(tracking_number, [])  # Dapatkan item berkaitan tracking number
 #     return render_template('scan_inhan.html', tracking_number=tracking_number, items=items)
 
+
+# ========== Run Flask Server ==========
 
 # Run server Flask
 if __name__ == '__main__':
