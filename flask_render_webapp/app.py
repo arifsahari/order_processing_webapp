@@ -115,7 +115,6 @@ def get_latest_file():
         return None
 """
 
-
 # ========== Routes ==========
 
 # Route : Upload files
@@ -137,7 +136,7 @@ def upload_file():
         else:
             folder_path = os.path.join(app.config['UPLOAD_FOLDER'], selected_folder)
             
-        timestamp = datetime.now().strftime(f'%Y-%m-%d_%H-%M-%S')
+        timestamp = datetime.datetime.now().strftime(f'%Y-%m-%d_%H-%M-%S') datetime.now().strftime(f'%Y-%m-%d_%H-%M-%S')datetime.now().strftime(f'%Y-%m-%d_%H-%M-%S').datetime.now().strftime(f'%Y-%m-%d_%H-%M-%S')
         timestamp_filename = f'{timestamp}_{file.filename}'
         
         ensure_folder_exists(folder_path)
