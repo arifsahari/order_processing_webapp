@@ -642,7 +642,7 @@ def index():
 @app.route('/design_list')
 def get_design_list():
     try:
-        df = pd.read_csv(os.path.join(MAPPER_FOLDER, 'csv','design_name.csv'), encoding='utf-8')
+        df = pd.read_csv(os.path.join(MAPPER_FOLDER, 'design_name.csv'), encoding='utf-8')
     except Exception as e:
         return jsonify({
             'status': 'error', 'message': f'Error reading file: {str(e)}'})
