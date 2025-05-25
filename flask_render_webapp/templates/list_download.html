@@ -29,8 +29,8 @@
                         <td class='list-table-td-l'>{{ file }}</td>
                         <td class='list-table-td-r'>
                             <div class='d-inline-flex flex-wrap justify-content-end gap-1'>
-                                <button onclick="downloadFile('exports', '{{ file }}')">Download</button>
-                                <button onclick="deleteFile('exports', '{{ file }}')">Delete</button>
+                                <button class='btn-radio' onclick="downloadFile('exports', '{{ file }}')">Download</button>
+                                <button class='btn-radio' onclick="deleteFile('exports', '{{ file }}')">Delete</button>
                             </div>
                         </td>
                     </tr>
