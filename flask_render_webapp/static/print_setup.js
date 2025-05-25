@@ -273,87 +273,87 @@ function printTableDesktop(result, listType, selectedBatch) {
 
 // ------------------------------
 
-// 3rd trial : FAILED
-function printTableMobile(result, listType, selectedBatch) {
-    const table = contentPrintTable(result, listType, selectedBatch);
-    const { displayListType, displayStoreType, dateStr } = customTitle(result, listType);
-    const title = `${displayListType.toUpperCase()} ${displayStoreType} ${dateStr} - ${selectedBatch}`;
-
-    const wrapper = document.createElement('div');
-    wrapper.innerHTML = `<style>${printStyle()}</style>`;
-    wrapper.appendChild(table);
-    document.body.appendChild(wrapper);
-
-    const opt = {
-        margin: 0.5,
-        filename: `${title}.pdf`,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2 },
-        jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' },
-        pdfCallback: function (pdf) {
-            const blob = pdf.output('blob');
-            const blobUrl = URL.createObjectURL(blob);
-            const iframe = document.createElement('iframe');
-            iframe.style.display = 'none';
-            iframe.src = blobUrl;
-            document.body.appendChild(iframe);
-            iframe.onload = function () {
-                iframe.contentWindow.focus();
-                iframe.contentWindow.print();
-                URL.revokeObjectURL(blobUrl);
-                document.body.removeChild(iframe);
-                document.body.removeChild(wrapper);
-            };
-        }
-    };
-
-    html2pdf().set(opt).from(wrapper).toPdf().get('pdf');
-}
-
-// ------------------------------
-
-// TOTAL FAILED
+// // 3rd trial : page ada border, kolum width tak ikut, format warna tak ikut kolum, font hauk
 // function printTableMobile(result, listType, selectedBatch) {
 //     const table = contentPrintTable(result, listType, selectedBatch);
-
-//     let { displayListType, displayStoreType, dateStr, totalQty } = customTitle(result, listType);
+//     const { displayListType, displayStoreType, dateStr } = customTitle(result, listType);
 //     const title = `${displayListType.toUpperCase()} ${displayStoreType} ${dateStr} - ${selectedBatch}`;
 
-//     // Buat container khas untuk styling print
-//     const printableDiv = document.createElement('div');
-//     printableDiv.id = 'printableArea';
-//     printableDiv.style.fontFamily = 'Carlito, Calibri, sans-serif';
-//     printableDiv.appendChild(table);
+//     const wrapper = document.createElement('div');
+//     wrapper.innerHTML = `<style>${printStyle()}</style>`;
+//     wrapper.appendChild(table);
+//     document.body.appendChild(wrapper);
 
-//     // Append ke body sementara untuk tangkap
-//     document.body.appendChild(printableDiv);
-
-//     // Apply highlight styling secara langsung
-//     const tds = printableDiv.querySelectorAll('td');
-//     tds.forEach(td => {
-//         const value = parseInt(td.textContent);
-//         if (!isNaN(value) && value > 1 && td.innerText.toLowerCase().includes('qty')) {
-//             td.style.backgroundColor = '#ffccbb';
-//             td.style.fontWeight = 'bold';
-//         }
-//     });
-
-//     // Convert to PDF
-//     html2pdf().from(printableDiv).set({
-//         margin: 0.3,
+//     const opt = {
+//         margin: 0.5,
 //         filename: `${title}.pdf`,
+//         image: { type: 'jpeg', quality: 0.98 },
 //         html2canvas: { scale: 2 },
-//         jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
-//     }).save().then(() => {
-//     // }).outputPdf('dataurlnewwindow').then(() => {
-//     // }).outputPdf('bloburl').then(() => {
-//         document.body.removeChild(printableDiv); // cleanup
-//     });
+//         jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' },
+//         pdfCallback: function (pdf) {
+//             const blob = pdf.output('blob');
+//             const blobUrl = URL.createObjectURL(blob);
+//             const iframe = document.createElement('iframe');
+//             iframe.style.display = 'none';
+//             iframe.src = blobUrl;
+//             document.body.appendChild(iframe);
+//             iframe.onload = function () {
+//                 iframe.contentWindow.focus();
+//                 iframe.contentWindow.print();
+//                 URL.revokeObjectURL(blobUrl);
+//                 document.body.removeChild(iframe);
+//                 document.body.removeChild(wrapper);
+//             };
+//         }
+//     };
+
+//     html2pdf().set(opt).from(wrapper).toPdf().get('pdf');
 // }
 
 // ------------------------------
 
-// TOTAL FAILED
+// 4th trial :
+function printTableMobile(result, listType, selectedBatch) {
+    const table = contentPrintTable(result, listType, selectedBatch);
+
+    let { displayListType, displayStoreType, dateStr, totalQty } = customTitle(result, listType);
+    const title = `${displayListType.toUpperCase()} ${displayStoreType} ${dateStr} - ${selectedBatch}`;
+
+    // Buat container khas untuk styling print
+    const printableDiv = document.createElement('div');
+    printableDiv.id = 'printableArea';
+    printableDiv.style.fontFamily = 'Carlito, Calibri, sans-serif';
+    printableDiv.appendChild(table);
+
+    // Append ke body sementara untuk tangkap
+    document.body.appendChild(printableDiv);
+
+    // Apply highlight styling secara langsung
+    const tds = printableDiv.querySelectorAll('td');
+    tds.forEach(td => {
+        const value = parseInt(td.textContent);
+        if (!isNaN(value) && value > 1 && td.innerText.toLowerCase().includes('qty')) {
+            td.style.backgroundColor = '#ffccbb';
+            td.style.fontWeight = 'bold';
+        }
+    });
+
+    // Convert to PDF
+    html2pdf().from(printableDiv).set({
+        margin: 0.3,
+        filename: `${title}.pdf`,
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+    }).save().then(() => {
+    // }).outputPdf('dataurlnewwindow').then(() => {
+    // }).outputPdf('bloburl').then(() => {
+        document.body.removeChild(printableDiv); // cleanup
+    });
+}
+
+// ------------------------------
+
+// 5th trial :
 // function printTableMobile(result, listType, selectedBatch) {
 //     const table = contentPrintTable(result, listType, selectedBatch);
 //     const { displayListType, displayStoreType, dateStr } = customTitle(result, listType);
@@ -396,7 +396,7 @@ function printTableMobile(result, listType, selectedBatch) {
 
 // ------------------------------
 
-// TOTAL FAILED
+// 6th trial :
 // function printTableMobile(result, listType, selectedBatch) {
 //     const table = contentPrintTable(result, listType, selectedBatch);  // Dapatkan table
 //     const { displayListType, displayStoreType, dateStr } = customTitle(result, listType);
@@ -450,7 +450,7 @@ function printTableMobile(result, listType, selectedBatch) {
 
 // ------------------------------
 
-// SUCCESS BUT RETURN BLANK PAGE
+// 7th trial : SUCCESS BUT RETURN BLANK PAGE
 // function printTableMobile(result, listType, selectedBatch) {
 //     const table = contentPrintTable(result, listType, selectedBatch);
 //     const { displayListType, displayStoreType, dateStr } = customTitle(result, listType);
@@ -492,7 +492,7 @@ function printTableMobile(result, listType, selectedBatch) {
 // }
 // ------------------------------
 
-// SUCCESS BUT RETURN BLANK PAGE
+// 8th trial : SUCCESS BUT RETURN BLANK PAGE
 // function printTableMobile(result, listType, selectedBatch) {
 //     const table = contentPrintTable(result, listType, selectedBatch);
 //     const { displayListType, displayStoreType, dateStr } = customTitle(result, listType);
