@@ -238,7 +238,8 @@ function printTableDesktop(result, listType, selectedBatch) {
 
 // ------------------------------
 
-// // 2nd trial :  page takde border, styling tak penuh ikut, font okey
+// // 2nd trial : auto download pdf, title download okey, page takde border, setiap page takde header,
+// // width kolum tak tentu, margin atas header jarak sangat, warna header tak ikut, font okey
 // function printTableMobile(result, listType, selectedBatch) {
 //     const table = contentPrintTable(result, listType, selectedBatch);
 
@@ -312,87 +313,88 @@ function printTableDesktop(result, listType, selectedBatch) {
 
 // ------------------------------
 
-// 4th trial :
-function printTableMobile(result, listType, selectedBatch) {
-    const table = contentPrintTable(result, listType, selectedBatch);
+// // 4th trial : auto download pdf, title download okey, page takde border, setiap page takde header,
+// // width kolum tak tentu, margin atas header jarak sangat, warna header tak ikut, font okey
+// function printTableMobile(result, listType, selectedBatch) {
+//     const table = contentPrintTable(result, listType, selectedBatch);
 
-    let { displayListType, displayStoreType, dateStr, totalQty } = customTitle(result, listType);
-    const title = `${displayListType.toUpperCase()} ${displayStoreType} ${dateStr} - ${selectedBatch}`;
+//     let { displayListType, displayStoreType, dateStr, totalQty } = customTitle(result, listType);
+//     const title = `${displayListType.toUpperCase()} ${displayStoreType} ${dateStr} - ${selectedBatch}`;
 
-    // Buat container khas untuk styling print
-    const printableDiv = document.createElement('div');
-    printableDiv.id = 'printableArea';
-    printableDiv.style.fontFamily = 'Carlito, Calibri, sans-serif';
-    printableDiv.appendChild(table);
+//     // Buat container khas untuk styling print
+//     const printableDiv = document.createElement('div');
+//     printableDiv.id = 'printableArea';
+//     printableDiv.style.fontFamily = 'Carlito, Calibri, sans-serif';
+//     printableDiv.appendChild(table);
 
-    // Append ke body sementara untuk tangkap
-    document.body.appendChild(printableDiv);
+//     // Append ke body sementara untuk tangkap
+//     document.body.appendChild(printableDiv);
 
-    // Apply highlight styling secara langsung
-    const tds = printableDiv.querySelectorAll('td');
-    tds.forEach(td => {
-        const value = parseInt(td.textContent);
-        if (!isNaN(value) && value > 1 && td.innerText.toLowerCase().includes('qty')) {
-            td.style.backgroundColor = '#ffccbb';
-            td.style.fontWeight = 'bold';
-        }
-    });
+//     // Apply highlight styling secara langsung
+//     const tds = printableDiv.querySelectorAll('td');
+//     tds.forEach(td => {
+//         const value = parseInt(td.textContent);
+//         if (!isNaN(value) && value > 1 && td.innerText.toLowerCase().includes('qty')) {
+//             td.style.backgroundColor = '#ffccbb';
+//             td.style.fontWeight = 'bold';
+//         }
+//     });
 
-    // Convert to PDF
-    html2pdf().from(printableDiv).set({
-        margin: 0.3,
-        filename: `${title}.pdf`,
-        html2canvas: { scale: 2 },
-        jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
-    }).save().then(() => {
-    // }).outputPdf('dataurlnewwindow').then(() => {
-    // }).outputPdf('bloburl').then(() => {
-        document.body.removeChild(printableDiv); // cleanup
-    });
-}
+//     // Convert to PDF
+//     html2pdf().from(printableDiv).set({
+//         margin: 0.3,
+//         filename: `${title}.pdf`,
+//         html2canvas: { scale: 2 },
+//         jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+//     }).save().then(() => {
+//     // }).outputPdf('dataurlnewwindow').then(() => {
+//     // }).outputPdf('bloburl').then(() => {
+//         document.body.removeChild(printableDiv); // cleanup
+//     });
+// }
 
 // ------------------------------
 
 // 5th trial :
-// function printTableMobile(result, listType, selectedBatch) {
-//     const table = contentPrintTable(result, listType, selectedBatch);
-//     const { displayListType, displayStoreType, dateStr } = customTitle(result, listType);
-//     const title = `${displayListType.toUpperCase()} ${displayStoreType} ${dateStr} - ${selectedBatch}`;
+function printTableMobile(result, listType, selectedBatch) {
+    const table = contentPrintTable(result, listType, selectedBatch);
+    const { displayListType, displayStoreType, dateStr } = customTitle(result, listType);
+    const title = `${displayListType.toUpperCase()} ${displayStoreType} ${dateStr} - ${selectedBatch}`;
 
-//     const container = document.createElement('div');
-//     container.innerHTML = `<style>${printStyle()}</style>`;
-//     container.appendChild(table);
-//     document.body.appendChild(container); // Make sure it's in DOM
+    const container = document.createElement('div');
+    container.innerHTML = `<style>${printStyle()}</style>`;
+    container.appendChild(table);
+    document.body.appendChild(container); // Make sure it's in DOM
 
-//     html2canvas(container, {
-//         scale: 2,
-//         useCORS: true
-//     }).then(canvas => {
-//         const imgData = canvas.toDataURL('image/png');
-//         const pdf = new jsPDF('p', 'mm', 'a4');
-//         const pageWidth = pdf.internal.pageSize.getWidth();
-//         const pageHeight = pdf.internal.pageSize.getHeight();
+    html2canvas(container, {
+        scale: 2,
+        useCORS: true
+    }).then(canvas => {
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new jsPDF('p', 'mm', 'a4');
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const pageHeight = pdf.internal.pageSize.getHeight();
 
-//         const imgProps = pdf.getImageProperties(imgData);
-//         const pdfWidth = pageWidth;
-//         const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+        const imgProps = pdf.getImageProperties(imgData);
+        const pdfWidth = pageWidth;
+        const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
 
-//         let position = 0;
+        let position = 0;
 
-//         if (pdfHeight > pageHeight) {
-//             // Auto split if content overflows
-//             pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
-//         } else {
-//             pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
-//         }
+        if (pdfHeight > pageHeight) {
+            // Auto split if content overflows
+            pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
+        } else {
+            pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
+        }
 
-//         document.body.removeChild(container); // Clean DOM
+        document.body.removeChild(container); // Clean DOM
 
-//         // Either download or open in new tab
-//         // pdf.save(`${title}.pdf`);
-//         window.open(pdf.output('bloburl'), '_blank');
-//     });
-// }
+        // Either download or open in new tab
+        // pdf.save(`${title}.pdf`);
+        window.open(pdf.output('bloburl'), '_blank');
+    });
+}
 
 // ------------------------------
 
