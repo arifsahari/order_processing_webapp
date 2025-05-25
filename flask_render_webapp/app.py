@@ -589,7 +589,7 @@ def chartdata():
     line_order_monthly = line_order_monthly.groupby('Order Time')['Order No'].count().reset_index(name='Total Orders')
     line_order_monthly = line_order_monthly.sort_values(by='Order Time', ascending=True)
 
-    Get necessary column
+    # Get necessary column
     bar_product_qty = bar_product_qty[['Design', 'Total Orders']]
     bar_product_sum = bar_product_sum[['Design', 'Total Orders']]
     line_order_daily = line_order_daily[['Order Time', 'Total Orders']]
@@ -604,18 +604,16 @@ def chartdata():
             'status': 'success', 'title': 'Total Products by Quantity',
             'x': bar_product_qty['Design'].tolist(), 'y': bar_product_qty['Total Orders'].tolist()}
     elif chart_type == 'order_summary':
-    if chart_type == 'order_summary':
+    # if chart_type == 'order_summary':
         data = {
             'status': 'success', 'title': 'Total Orders by Store', 'label': '',
             'x': bar_order_sum['Store'].tolist(), 'y': bar_order_sum['Total'].tolist()}
     elif chart_type == 'order_daily':
-    if chart_type == 'order_daily':
-        # generate revenue chart data
+    # if chart_type == 'order_daily':
         data = {
             'status': 'success', 'title': 'Total Orders by Daily', 'label': 'Order',
             'x': line_order_daily['Order Time'].tolist(), 'y': line_order_daily['Total Orders'].tolist()}
     elif chart_type == 'order_monthly':
-        # generate revenue chart data
         data = {
             'status': 'success', 'title': 'Total Orders by Monthly', 'label': 'Order',
             'x': line_order_monthly['Order Time'].tolist(), 'y': line_order_monthly['Total Orders'].tolist()}
