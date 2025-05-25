@@ -396,60 +396,97 @@ function printTableDesktop(result, listType, selectedBatch) {
 
 // ------------------------------
 
-//
-function printTableMobile(result, listType, selectedBatch) {
-    const table = contentPrinTable(result, listType, selectedBatch);  // Dapatkan table
-    const { displayListType, displayStoreType, dateStr } = customTitle(result, listType);
-    const title = `${displayListType.toUpperCase()} ${displayStoreType} ${dateStr} - ${selectedBatch}`;
+// TOTAL FAILED
+// function printTableMobile(result, listType, selectedBatch) {
+//     const table = contentPrinTable(result, listType, selectedBatch);  // Dapatkan table
+//     const { displayListType, displayStoreType, dateStr } = customTitle(result, listType);
+//     const title = `${displayListType.toUpperCase()} ${displayStoreType} ${dateStr} - ${selectedBatch}`;
 
-    // Buat div container yang nampak
-    const container = document.createElement('div');
-    container.id = 'pdf-capture-container';
-    container.style.position = 'fixed';
-    container.style.top = '0';
-    container.style.left = '0';
-    container.style.background = 'white';
-    container.style.padding = '10px';
-    container.style.zIndex = '9999';
-    container.style.width = '800px'; // pastikan cukup besar
-    container.style.fontFamily = "'Carlito', sans-serif";
-    container.innerHTML = `<style>${printStyle()}</style>`;
-    container.appendChild(table);
-    document.body.appendChild(container);
+//     // Buat div container yang nampak
+//     const container = document.createElement('div');
+//     container.id = 'pdf-capture-container';
+//     container.style.position = 'fixed';
+//     container.style.top = '0';
+//     container.style.left = '0';
+//     container.style.background = 'white';
+//     container.style.padding = '10px';
+//     container.style.zIndex = '9999';
+//     container.style.width = '800px'; // pastikan cukup besar
+//     container.style.fontFamily = "'Carlito', sans-serif";
+//     container.innerHTML = `<style>${printStyle()}</style>`;
+//     container.appendChild(table);
+//     document.body.appendChild(container);
 
-    // Timeout bagi semua render siap
-    setTimeout(() => {
-        html2canvas(container, {
-            scale: 2,
-            useCORS: true
-        }).then(canvas => {
-            const imgData = canvas.toDataURL('image/png');
-            const { jsPDF } = window.jspdf;
-            const pdf = new jsPDF('p', 'mm', 'a4');
+//     // Timeout bagi semua render siap
+//     setTimeout(() => {
+//         html2canvas(container, {
+//             scale: 2,
+//             useCORS: true
+//         }).then(canvas => {
+//             const imgData = canvas.toDataURL('image/png');
+//             const { jsPDF } = window.jspdf;
+//             const pdf = new jsPDF('p', 'mm', 'a4');
 
-            const pageWidth = pdf.internal.pageSize.getWidth();
-            const pageHeight = pdf.internal.pageSize.getHeight();
-            const imgProps = pdf.getImageProperties(imgData);
-            const pdfWidth = pageWidth;
-            const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+//             const pageWidth = pdf.internal.pageSize.getWidth();
+//             const pageHeight = pdf.internal.pageSize.getHeight();
+//             const imgProps = pdf.getImageProperties(imgData);
+//             const pdfWidth = pageWidth;
+//             const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
 
-            let position = 0;
+//             let position = 0;
 
-            pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
+//             pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
             
-            // Lepas save atau open, buang dari DOM
-            document.body.removeChild(container);
+//             // Lepas save atau open, buang dari DOM
+//             document.body.removeChild(container);
 
-            // Preview tab baru
-            window.open(pdf.output('bloburl'), '_blank');
-            // Atau download:
-            // pdf.save(`${title}.pdf`);
-        });
-    }, 800);  // Delay cukup untuk render
-}
+//             // Preview tab baru
+//             window.open(pdf.output('bloburl'), '_blank');
+//             // Atau download:
+//             // pdf.save(`${title}.pdf`);
+//         });
+//     }, 800);  // Delay cukup untuk render
+// }
 
 // ------------------------------
 
+function printTableMobile(result, listType, selectedBatch) {
+    const table = contentPrintTable(result, listType, selectedBatch);
+    const { displayListType, displayStoreType, dateStr } = customTitle(result, listType);
+    const title = `${displayListType.toUpperCase()} ${displayStoreType} ${dateStr} - ${selectedBatch}`;
+
+    // Create container that will be in DOM (offscreen but rendered)
+    const wrapper = document.createElement('div');
+    wrapper.id = 'pdfWrapperActual';
+    wrapper.style.position = 'absolute';
+    wrapper.style.top = '-9999px'; // offscreen
+    wrapper.style.left = '-9999px';
+    wrapper.style.fontFamily = 'Calibri, Carlito, sans-serif';
+    wrapper.innerHTML = `<style>${printStyle()}</style>`;
+    wrapper.appendChild(table);
+    document.body.appendChild(wrapper); // force render to apply font
+
+    // Use html2pdf only after DOM is fully rendered
+    setTimeout(() => {
+        const opt = {
+            margin: 0.5,
+            filename: `${title}.pdf`,
+            image: { type: 'jpeg', quality: 1 },
+            html2canvas: {
+                scale: 2,
+                useCORS: true,
+                logging: true
+            },
+            jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+        };
+
+        html2pdf().set(opt).from(wrapper).toPdf().get('pdf').then(pdf => {
+            const blobUrl = pdf.output('bloburl');
+            window.open(blobUrl, '_blank');
+            document.body.removeChild(wrapper); // cleanup
+        });
+    }, 500); // wait to make sure font applied
+}
 
 
 // ------------------------------
