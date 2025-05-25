@@ -272,7 +272,8 @@ Assign Batch
 
 # Function : Assign non-batch sequence
 def assign_order_sequence(df):
-    df['SEQ'] = pd.to_numeric(df['SEQ'], errors='coerce').astype(int)
+    if df['SEQ'].dtype == 'O' or str(df['SEQ'].dtype).startswith('object'):
+        df['SEQ'] = pd.to_numeric(df['SEQ'], errors='coerce').astype('Int64')
     df_seq = df.groupby([
         'Order No','Order Time','SEQ'
         ])['Quantity'].sum().reset_index()\
@@ -284,7 +285,8 @@ def assign_order_sequence(df):
 
 # Function : Assign batch sequence
 def assign_order_sequence_batch(df):
-    df['SEQ'] = pd.to_numeric(df['SEQ'], errors='coerce').astype(int)
+    if df['SEQ'].dtype == 'O' or str(df['SEQ'].dtype).startswith('object'):
+        df['SEQ'] = pd.to_numeric(df['SEQ'], errors='coerce').astype('Int64')
     df_seq = df.groupby([
         'Order No','Order Time','SEQ'
         ])['Quantity'].sum().reset_index()\
