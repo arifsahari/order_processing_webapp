@@ -450,49 +450,94 @@ function printTableDesktop(result, listType, selectedBatch) {
 
 // ------------------------------
 
+// SUCCESS BUT RETURN BLANK PAGE
+// function printTableMobile(result, listType, selectedBatch) {
+//     const table = contentPrintTable(result, listType, selectedBatch);
+//     const { displayListType, displayStoreType, dateStr } = customTitle(result, listType);
+//     const title = `${displayListType.toUpperCase()} ${displayStoreType} ${dateStr} - ${selectedBatch}`;
+
+//     // Create container that will be in DOM (offscreen but rendered)
+//     const wrapper = document.createElement('div');
+//     wrapper.id = 'pdfWrapperActual';
+//     wrapper.style.position = 'absolute';
+//     wrapper.style.top = '-9999px'; // offscreen
+//     wrapper.style.left = '-9999px';
+//     wrapper.style.fontFamily = 'Calibri, Carlito, sans-serif';
+//     wrapper.innerHTML = `<style>${printStyle()}</style>`;
+//     console.log('📦 Table content:', table);
+
+//     wrapper.appendChild(table);
+//     document.body.appendChild(wrapper); // force render to apply font
+
+//     // Use html2pdf only after DOM is fully rendered
+//     setTimeout(() => {
+//         const opt = {
+//             margin: 0.5,
+//             filename: `${title}.pdf`,
+//             image: { type: 'jpeg', quality: 1 },
+//             html2canvas: {
+//                 scale: 2,
+//                 useCORS: true,
+//                 logging: true
+//             },
+//             jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+//         };
+
+//         html2pdf().set(opt).from(wrapper).toPdf().get('pdf').then(pdf => {
+//             const blobUrl = pdf.output('bloburl');
+//             window.open(blobUrl, '_blank');
+//             document.body.removeChild(wrapper); // cleanup
+//         });
+//     }, 500); // wait to make sure font applied
+// }
+// ------------------------------
+
 function printTableMobile(result, listType, selectedBatch) {
     const table = contentPrintTable(result, listType, selectedBatch);
     const { displayListType, displayStoreType, dateStr } = customTitle(result, listType);
     const title = `${displayListType.toUpperCase()} ${displayStoreType} ${dateStr} - ${selectedBatch}`;
 
-    // Create container that will be in DOM (offscreen but rendered)
+    if (!table) {
+        alert('Table not generated!');
+        return;
+    }
+
     const wrapper = document.createElement('div');
     wrapper.id = 'pdfWrapperActual';
     wrapper.style.position = 'absolute';
-    wrapper.style.top = '-9999px'; // offscreen
+    wrapper.style.top = '-9999px';
     wrapper.style.left = '-9999px';
     wrapper.style.fontFamily = 'Calibri, Carlito, sans-serif';
-    wrapper.innerHTML = `<style>${printStyle()}</style>`;
+
+    const styleTag = document.createElement('style');
+    styleTag.innerHTML = printStyle();
+    wrapper.appendChild(styleTag);
     wrapper.appendChild(table);
-    document.body.appendChild(wrapper); // force render to apply font
 
-    // Use html2pdf only after DOM is fully rendered
+    document.body.appendChild(wrapper);
+
     setTimeout(() => {
-        const opt = {
-            margin: 0.5,
-            filename: `${title}.pdf`,
-            image: { type: 'jpeg', quality: 1 },
-            html2canvas: {
-                scale: 2,
-                useCORS: true,
-                logging: true
-            },
-            jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
-        };
+        requestAnimationFrame(() => {
+            const opt = {
+                margin: 0.5,
+                filename: `${title}.pdf`,
+                image: { type: 'jpeg', quality: 1 },
+                html2canvas: {
+                    scale: 2,
+                    useCORS: true,
+                    logging: true
+                },
+                jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+            };
 
-        html2pdf().set(opt).from(wrapper).toPdf().get('pdf').then(pdf => {
-            const blobUrl = pdf.output('bloburl');
-            window.open(blobUrl, '_blank');
-            document.body.removeChild(wrapper); // cleanup
+            html2pdf().set(opt).from(wrapper).toPdf().get('pdf').then(pdf => {
+                const blobUrl = pdf.output('bloburl');
+                window.open(blobUrl, '_blank');
+                document.body.removeChild(wrapper);
+            });
         });
-    }, 500); // wait to make sure font applied
+    }, 500);
 }
-
-
-// ------------------------------
-
-
-
 // ------------------------------
 
 
