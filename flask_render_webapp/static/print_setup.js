@@ -238,45 +238,11 @@ function printTableDesktop(result, listType, selectedBatch) {
 
 // ------------------------------
 
-// FAILED
-function printTableMobile(result, listType, selectedBatch) {
-    const table = contentPrinTable(result, listType, selectedBatch);
-
-    let { displayListType, displayStoreType, dateStr, totalQty } = customTitle(result, listType);
-    const title = `${displayListType.toUpperCase()} ${displayStoreType} ${dateStr} - ${selectedBatch}`;
-
-    const wrapper = document.createElement('div');
-    wrapper.innerHTML = `<style>${printStyle()}</style>`;
-    wrapper.appendChild(table);
-    document.body.appendChild(wrapper);
-
-    const opt = {
-        margin: 0.5,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2 },
-        jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
-    };
-
-    html2pdf().set(opt).from(wrapper).outputPdf('bloburl').then((blobUrl) => {
-        const win = window.open(blobUrl);
-        document.body.removeChild(wrapper);
-        if (win) {
-            win.focus();
-            win.print();
-        }
-    });
-
-    html2pdf().set(opt).from(wrapper).save().then(() => {
-        document.body.removeChild(wrapper);
-    });
-}
-
-// ------------------------------
-
-// FAILED
+// TOTAL FAILED
 // function printTableMobile(result, listType, selectedBatch) {
 //     const table = contentPrinTable(result, listType, selectedBatch);
-//     const { displayListType, displayStoreType, dateStr } = customTitle(result, listType);
+
+//     let { displayListType, displayStoreType, dateStr, totalQty } = customTitle(result, listType);
 //     const title = `${displayListType.toUpperCase()} ${displayStoreType} ${dateStr} - ${selectedBatch}`;
 
 //     const wrapper = document.createElement('div');
@@ -286,29 +252,63 @@ function printTableMobile(result, listType, selectedBatch) {
 
 //     const opt = {
 //         margin: 0.5,
-//         filename: `${title}.pdf`,
 //         image: { type: 'jpeg', quality: 0.98 },
 //         html2canvas: { scale: 2 },
-//         jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' },
-//         pdfCallback: function (pdf) {
-//             const blob = pdf.output('blob');
-//             const blobUrl = URL.createObjectURL(blob);
-//             const iframe = document.createElement('iframe');
-//             iframe.style.display = 'none';
-//             iframe.src = blobUrl;
-//             document.body.appendChild(iframe);
-//             iframe.onload = function () {
-//                 iframe.contentWindow.focus();
-//                 iframe.contentWindow.print();
-//                 URL.revokeObjectURL(blobUrl);
-//                 document.body.removeChild(iframe);
-//                 document.body.removeChild(wrapper);
-//             };
-//         }
+//         jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
 //     };
 
-//     html2pdf().set(opt).from(wrapper).toPdf().get('pdf');
+//     html2pdf().set(opt).from(wrapper).outputPdf('bloburl').then((blobUrl) => {
+//         const win = window.open(blobUrl);
+//         document.body.removeChild(wrapper);
+//         if (win) {
+//             win.focus();
+//             win.print();
+//         }
+//     });
+
+//     html2pdf().set(opt).from(wrapper).save().then(() => {
+//         document.body.removeChild(wrapper);
+//     });
 // }
+
+// ------------------------------
+
+// FAILED
+function printTableMobile(result, listType, selectedBatch) {
+    const table = contentPrinTable(result, listType, selectedBatch);
+    const { displayListType, displayStoreType, dateStr } = customTitle(result, listType);
+    const title = `${displayListType.toUpperCase()} ${displayStoreType} ${dateStr} - ${selectedBatch}`;
+
+    const wrapper = document.createElement('div');
+    wrapper.innerHTML = `<style>${printStyle()}</style>`;
+    wrapper.appendChild(table);
+    document.body.appendChild(wrapper);
+
+    const opt = {
+        margin: 0.5,
+        filename: `${title}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' },
+        pdfCallback: function (pdf) {
+            const blob = pdf.output('blob');
+            const blobUrl = URL.createObjectURL(blob);
+            const iframe = document.createElement('iframe');
+            iframe.style.display = 'none';
+            iframe.src = blobUrl;
+            document.body.appendChild(iframe);
+            iframe.onload = function () {
+                iframe.contentWindow.focus();
+                iframe.contentWindow.print();
+                URL.revokeObjectURL(blobUrl);
+                document.body.removeChild(iframe);
+                document.body.removeChild(wrapper);
+            };
+        }
+    };
+
+    html2pdf().set(opt).from(wrapper).toPdf().get('pdf');
+}
 
 // ------------------------------
 
