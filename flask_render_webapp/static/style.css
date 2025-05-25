@@ -201,7 +201,9 @@ th {
     font-size: 14px;
 }
 
-.btn-radio input[type="radio"] {
+.btn-radio ,
+input[type='radio'],
+input[type='checkbox'] {
     vertical-align: middle;
     position: relative;
     top: -1px;
