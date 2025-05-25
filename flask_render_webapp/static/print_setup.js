@@ -340,8 +340,8 @@ function printTableMobile(result, listType, selectedBatch) {
         filename: `${title}.pdf`,
         html2canvas: { scale: 2 },
         jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
-    }).save().then(() => {
-    // }).outputPdf('dataurlnewwindow').then(() => {
+    // }).save().then(() => {
+    }).outputPdf('dataurlnewwindow').then(() => {
     // }).outputPdf('bloburl').then(() => {
         document.body.removeChild(printableDiv); // cleanup
     });
