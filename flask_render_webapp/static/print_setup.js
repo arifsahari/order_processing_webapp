@@ -274,41 +274,41 @@ function printTableDesktop(result, listType, selectedBatch) {
 // ------------------------------
 
 // FAILED
-function printTableMobile(result, listType, selectedBatch) {
-    const table = contentPrinTable(result, listType, selectedBatch);
-    const { displayListType, displayStoreType, dateStr } = customTitle(result, listType);
-    const title = `${displayListType.toUpperCase()} ${displayStoreType} ${dateStr} - ${selectedBatch}`;
+// function printTableMobile(result, listType, selectedBatch) {
+//     const table = contentPrinTable(result, listType, selectedBatch);
+//     const { displayListType, displayStoreType, dateStr } = customTitle(result, listType);
+//     const title = `${displayListType.toUpperCase()} ${displayStoreType} ${dateStr} - ${selectedBatch}`;
 
-    const wrapper = document.createElement('div');
-    wrapper.innerHTML = `<style>${printStyle()}</style>`;
-    wrapper.appendChild(table);
-    document.body.appendChild(wrapper);
+//     const wrapper = document.createElement('div');
+//     wrapper.innerHTML = `<style>${printStyle()}</style>`;
+//     wrapper.appendChild(table);
+//     document.body.appendChild(wrapper);
 
-    const opt = {
-        margin: 0.5,
-        filename: `${title}.pdf`,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2 },
-        jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' },
-        pdfCallback: function (pdf) {
-            const blob = pdf.output('blob');
-            const blobUrl = URL.createObjectURL(blob);
-            const iframe = document.createElement('iframe');
-            iframe.style.display = 'none';
-            iframe.src = blobUrl;
-            document.body.appendChild(iframe);
-            iframe.onload = function () {
-                iframe.contentWindow.focus();
-                iframe.contentWindow.print();
-                URL.revokeObjectURL(blobUrl);
-                document.body.removeChild(iframe);
-                document.body.removeChild(wrapper);
-            };
-        }
-    };
+//     const opt = {
+//         margin: 0.5,
+//         filename: `${title}.pdf`,
+//         image: { type: 'jpeg', quality: 0.98 },
+//         html2canvas: { scale: 2 },
+//         jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' },
+//         pdfCallback: function (pdf) {
+//             const blob = pdf.output('blob');
+//             const blobUrl = URL.createObjectURL(blob);
+//             const iframe = document.createElement('iframe');
+//             iframe.style.display = 'none';
+//             iframe.src = blobUrl;
+//             document.body.appendChild(iframe);
+//             iframe.onload = function () {
+//                 iframe.contentWindow.focus();
+//                 iframe.contentWindow.print();
+//                 URL.revokeObjectURL(blobUrl);
+//                 document.body.removeChild(iframe);
+//                 document.body.removeChild(wrapper);
+//             };
+//         }
+//     };
 
-    html2pdf().set(opt).from(wrapper).toPdf().get('pdf');
-}
+//     html2pdf().set(opt).from(wrapper).toPdf().get('pdf');
+// }
 
 // ------------------------------
 
@@ -351,6 +351,48 @@ function printTableMobile(result, listType, selectedBatch) {
 //     });
 // }
 
+// ------------------------------
+
+// 
+function printTableMobile(result, listType, selectedBatch) {
+    const table = contentPrinTable(result, listType, selectedBatch);
+    const { displayListType, displayStoreType, dateStr } = customTitle(result, listType);
+    const title = `${displayListType.toUpperCase()} ${displayStoreType} ${dateStr} - ${selectedBatch}`;
+
+    const container = document.createElement('div');
+    container.innerHTML = `<style>${printStyle()}</style>`;
+    container.appendChild(table);
+    document.body.appendChild(container); // Make sure it's in DOM
+
+    html2canvas(container, {
+        scale: 2,
+        useCORS: true
+    }).then(canvas => {
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new jsPDF('p', 'mm', 'a4');
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const pageHeight = pdf.internal.pageSize.getHeight();
+
+        const imgProps = pdf.getImageProperties(imgData);
+        const pdfWidth = pageWidth;
+        const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+        let position = 0;
+
+        if (pdfHeight > pageHeight) {
+            // Auto split if content overflows
+            pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
+        } else {
+            pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
+        }
+
+        document.body.removeChild(container); // Clean DOM
+
+        // Either download or open in new tab
+        // pdf.save(`${title}.pdf`);
+        window.open(pdf.output('bloburl'), '_blank');
+    });
+}
 
 // ------------------------------
 
