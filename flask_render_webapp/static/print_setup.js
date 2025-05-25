@@ -190,86 +190,86 @@ function printTableDesktop(result, listType, selectedBatch) {
 // ------------------------------
 // Mobile Print
 
-// 1st trial : FAILED
-function printTableMobile(result, listType, selectedBatch) {
-    const table = contentPrintTable(result, listType, selectedBatch);
-
-    let { displayListType, displayStoreType, dateStr, totalQty } = customTitle(result, listType);
-    const title = `${displayListType.toUpperCase()} ${displayStoreType} ${dateStr} - ${selectedBatch}`;
-
-    let iframe = document.createElement('iframe');
-    iframe.style.display = 'none';
-    document.body.appendChild(iframe);
-
-    const style = `<style>${printStyle()}</style>`;
-    const doc = iframe.contentDocument || iframe.contentWindow.document;
-    doc.open();
-    doc.write(`<html><head><title>${title}</title>${style}</head><body>`);
-    doc.write(table.outerHTML);
-    doc.write('</body></html>');
-    doc.write(`
-        <script>
-            // Tunggu sehingga DOM siap
-            window.onload = function() {
-                // Panggil fungsi highlightColumn jika ada
-                if (typeof highlightColumn === 'function') {
-                    highlightColumn();
-                }
-
-                // Force print selepas gaya siap
-                setTimeout(() => {
-                    window.focus();
-                    window.print();
-                }, 300);
-            };
-        </script>
-    `);
-   doc.close();
-
-    // setTimeout(() => {
-    //     iframe.contentWindow.focus();
-    //     iframe.contentWindow.print();
-    //     setTimeout(() => document.body.removeChild(iframe), 2000);
-    // }, 500);
-    setTimeout(() => {
-        document.body.removeChild(iframe);
-    }, 3000);
-}
-
-// ------------------------------
-
-// TOTAL FAILED
+// // 1st trial : FAILED nothing happened
 // function printTableMobile(result, listType, selectedBatch) {
 //     const table = contentPrintTable(result, listType, selectedBatch);
 
 //     let { displayListType, displayStoreType, dateStr, totalQty } = customTitle(result, listType);
 //     const title = `${displayListType.toUpperCase()} ${displayStoreType} ${dateStr} - ${selectedBatch}`;
 
-//     const wrapper = document.createElement('div');
-//     wrapper.innerHTML = `<style>${printStyle()}</style>`;
-//     wrapper.appendChild(table);
-//     document.body.appendChild(wrapper);
+//     let iframe = document.createElement('iframe');
+//     iframe.style.display = 'none';
+//     document.body.appendChild(iframe);
 
-//     const opt = {
-//         margin: 0.5,
-//         image: { type: 'jpeg', quality: 0.98 },
-//         html2canvas: { scale: 2 },
-//         jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
-//     };
+//     const style = `<style>${printStyle()}</style>`;
+//     const doc = iframe.contentDocument || iframe.contentWindow.document;
+//     doc.open();
+//     doc.write(`<html><head><title>${title}</title>${style}</head><body>`);
+//     doc.write(table.outerHTML);
+//     doc.write('</body></html>');
+//     doc.write(`
+//         <script>
+//             // Tunggu sehingga DOM siap
+//             window.onload = function() {
+//                 // Panggil fungsi highlightColumn jika ada
+//                 if (typeof highlightColumn === 'function') {
+//                     highlightColumn();
+//                 }
 
-//     html2pdf().set(opt).from(wrapper).outputPdf('bloburl').then((blobUrl) => {
-//         const win = window.open(blobUrl);
-//         document.body.removeChild(wrapper);
-//         if (win) {
-//             win.focus();
-//             win.print();
-//         }
-//     });
+//                 // Force print selepas gaya siap
+//                 setTimeout(() => {
+//                     window.focus();
+//                     window.print();
+//                 }, 300);
+//             };
+//         </script>
+//     `);
+//    doc.close();
 
-//     html2pdf().set(opt).from(wrapper).save().then(() => {
-//         document.body.removeChild(wrapper);
-//     });
+//     // setTimeout(() => {
+//     //     iframe.contentWindow.focus();
+//     //     iframe.contentWindow.print();
+//     //     setTimeout(() => document.body.removeChild(iframe), 2000);
+//     // }, 500);
+//     setTimeout(() => {
+//         document.body.removeChild(iframe);
+//     }, 3000);
 // }
+
+// ------------------------------
+
+// 2nd trial : TOTAL FAILED
+function printTableMobile(result, listType, selectedBatch) {
+    const table = contentPrintTable(result, listType, selectedBatch);
+
+    let { displayListType, displayStoreType, dateStr, totalQty } = customTitle(result, listType);
+    const title = `${displayListType.toUpperCase()} ${displayStoreType} ${dateStr} - ${selectedBatch}`;
+
+    const wrapper = document.createElement('div');
+    wrapper.innerHTML = `<style>${printStyle()}</style>`;
+    wrapper.appendChild(table);
+    document.body.appendChild(wrapper);
+
+    const opt = {
+        margin: 0.5,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+    };
+
+    html2pdf().set(opt).from(wrapper).outputPdf('bloburl').then((blobUrl) => {
+        const win = window.open(blobUrl);
+        document.body.removeChild(wrapper);
+        if (win) {
+            win.focus();
+            win.print();
+        }
+    });
+
+    html2pdf().set(opt).from(wrapper).save().then(() => {
+        document.body.removeChild(wrapper);
+    });
+}
 
 // ------------------------------
 
