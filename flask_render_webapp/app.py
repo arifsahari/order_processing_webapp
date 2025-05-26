@@ -15,6 +15,8 @@ import pandas as pd
 import json
 import openpyxl
 from datetime import datetime
+import requests
+from io import BytesIO
 
 # Custom Module
 from .process import (
@@ -532,7 +534,7 @@ def print_from_mobile():
         )
 
         if response.ok:
-            print(f'PDF berjaya dijana: {filename}')
+            print(f'PDF generated succesfully: {filename}')
             return send_file(BytesIO(response.content), as_attachment=True, download_name=filename)
         else:
             print('Railway response error:', response.status_code, response.text)
