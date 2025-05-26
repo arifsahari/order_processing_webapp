@@ -489,7 +489,7 @@ function printTableMobile(result, listType, selectedBatch) {
         })
     })
     .then(res => {
-        if (!res.ok) throw new Error('Gagal hasilkan fail PDF');
+        if (!res.ok) throw new Error('Failed to generate PDF');
         return res.blob();
     })
     .then(blob => {
