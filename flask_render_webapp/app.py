@@ -360,7 +360,7 @@ def process_batch():
 
 
 """
-Route for Exporting Output
+Route for Exporting Files
 """
 
 # Route : Export data after filtered
@@ -487,7 +487,6 @@ def view_data(filename):
 Endpoint for Exporting Output
 """
 
-
 @app.route('/export_ordermark', methods=['POST'])
 def generate_filtered_orders():
     data = request.get_json()
@@ -508,6 +507,41 @@ def generate_filtered_orders():
         return jsonify({'status': 'success', 'file': ordermark})
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)}), 500
+
+
+"""
+Route for Printing PDF
+"""
+
+# Route : Printing PDF
+@app.route('/print_mobile', methods=['POST'])
+def print_from_mobile():
+    try:
+        data = request.get_json()
+        html = data.get('html', '')
+        filename = data.get('filename', 'output.pdf')
+
+        if not html:
+            print('HTML content is empty.')
+            return 'No HTML provided', 400
+
+        railway_url = 'https://pdf-gen.up.railway.app/generate'
+        response = requests.post(
+            railway_url,
+            json={'html': html, 'filename': filename}
+        )
+
+        if response.ok:
+            print(f'PDF berjaya dijana: {filename}')
+            return send_file(BytesIO(response.content), as_attachment=True, download_name=filename)
+        else:
+            print('Railway response error:', response.status_code, response.text)
+            return f'Railway error: {response.status_code}', 500
+
+    except Exception as e:
+        print(f'Flask server exception: {str(e)}')
+        return f'Flask server error: {str(e)}', 500
+
 
 
 """
