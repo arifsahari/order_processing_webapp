@@ -78,15 +78,21 @@ function contentPrintTable(result, listType, selectedBatch) {
 // Set print style
 
 function printStyle() {
+    // https://raw.githubusercontent.com/arifsahari/order_processing_webapp/main/flask_render_webapp/static/fonts/Calibri.woff2
+            // td[data-quantity]:not([data-quantity="1"]) {
+            //     font-weight: bold; background-color: #ffccbb;
+            // }
     return `
+
+
         @page { size: A4; margin: 20px 15px; margin-bottom: 15px; }
 
         @media print {
-            body { font-family: Calibri, 'Carlito', sans-serif; }
+            body { font-family: 'MyCalibri', 'Carlito', sans-serif }
             table { font-size: 12px !important; width: 100% !important;
                     border-collapse: collapse; page-break-before: auto;
                     break-inside: avoid; page-break-inside: avoid;
-                    page-break-after: auto; table-layout: fixed; /* enforce width control */}
+                    page-break-after: auto; }
             th, td { border: 1px solid black; text-align: left;
                     vertical-align: top; text-overflow: clip;
                     overflow: hidden; padding: 2px 2px !important; word-wrap: break-word; }
@@ -100,9 +106,7 @@ function printStyle() {
             .custom-header-row { background-color: #ffffff; border: none;
                                  font-size: 12px; font-weight: normal; text-align: left;
                                  padding-bottom: 15px !important; }
-            td[data-quantity]:not([data-quantity="1"]) {
-                font-weight: bold; background-color: #ffccbb;
-            }
+
         }
         .picklist-table th:nth-child(1), .picklist-table td:nth-child(1) { width: 3%; }
         .picklist-table th:nth-child(2), .picklist-table td:nth-child(2) { width: 1%; text-align: center !important; }
@@ -163,11 +167,6 @@ function customTitle(result, listType) {
 
 
 // ------------------------------
-
-// ------------------------------
-
-
-// ------------------------------
 // Desktop Print
 
 function printTableDesktop(result, listType, selectedBatch) {
@@ -190,7 +189,9 @@ function printTableDesktop(result, listType, selectedBatch) {
 // ------------------------------
 // Mobile Print
 
-// // 1st trial : FAILED nothing happened
+// ------------------------------
+
+// // 1st Trial : bukak popup,  okey cuma column width x ikut, formatting warna pun ikut suka dia, font hauk
 // function printTableMobile(result, listType, selectedBatch) {
 //     const table = contentPrintTable(result, listType, selectedBatch);
 
@@ -224,7 +225,7 @@ function printTableDesktop(result, listType, selectedBatch) {
 //             };
 //         </script>
 //     `);
-//    doc.close();
+//     doc.close();
 
 //     // setTimeout(() => {
 //     //     iframe.contentWindow.focus();
@@ -235,11 +236,10 @@ function printTableDesktop(result, listType, selectedBatch) {
 //         document.body.removeChild(iframe);
 //     }, 3000);
 // }
-
 // ------------------------------
 
-// // 2nd trial : auto download pdf, title download okey, page takde border, setiap page takde header,
-// // width kolum tak tentu, margin atas header jarak sangat, warna header tak ikut, font okey
+// // 2nd Trial : auto download pdf, title download tak ikut nama, page takde border, setiap page takde header,
+// width kolum tak tentu, margin atas header jarak sangat, warna header tak ikut, font okey
 // function printTableMobile(result, listType, selectedBatch) {
 //     const table = contentPrintTable(result, listType, selectedBatch);
 
@@ -274,7 +274,7 @@ function printTableDesktop(result, listType, selectedBatch) {
 
 // ------------------------------
 
-// // 3rd trial : page ada border, kolum width tak ikut, format warna tak ikut kolum, font hauk
+// // 3rd Trial : bukak popup,  okey cuma column width x ikut, formatting warna pun ikut suka dia, font hauk
 // function printTableMobile(result, listType, selectedBatch) {
 //     const table = contentPrintTable(result, listType, selectedBatch);
 //     const { displayListType, displayStoreType, dateStr } = customTitle(result, listType);
@@ -313,7 +313,7 @@ function printTableDesktop(result, listType, selectedBatch) {
 
 // ------------------------------
 
-// // 4th trial : auto download pdf, title download okey, page takde border, setiap page takde header,
+// // 4th Trial : auto download pdf, title download okey, page takde border, setiap page takde header,
 // // width kolum tak tentu, margin atas header jarak sangat, warna header tak ikut, font okey
 // function printTableMobile(result, listType, selectedBatch) {
 //     const table = contentPrintTable(result, listType, selectedBatch);
@@ -355,50 +355,49 @@ function printTableDesktop(result, listType, selectedBatch) {
 
 // ------------------------------
 
-// 5th trial :
-function printTableMobile(result, listType, selectedBatch) {
-    const table = contentPrintTable(result, listType, selectedBatch);
-    const { displayListType, displayStoreType, dateStr } = customTitle(result, listType);
-    const title = `${displayListType.toUpperCase()} ${displayStoreType} ${dateStr} - ${selectedBatch}`;
+// // 5th Trial : bukak popup, okey cuma column width x ikut, formatting warna pun ikut suka dia
+// function printTableMobile(result, listType, selectedBatch) {
+//     const table = contentPrintTable(result, listType, selectedBatch);
+//     const { displayListType, displayStoreType, dateStr } = customTitle(result, listType);
+//     const title = `${displayListType.toUpperCase()} ${displayStoreType} ${dateStr} - ${selectedBatch}`;
 
-    const container = document.createElement('div');
-    container.innerHTML = `<style>${printStyle()}</style>`;
-    container.appendChild(table);
-    document.body.appendChild(container); // Make sure it's in DOM
+//     const container = document.createElement('div');
+//     container.innerHTML = `<style>${printStyle()}</style>`;
+//     container.appendChild(table);
+//     document.body.appendChild(container); // Make sure it's in DOM
 
-    html2canvas(container, {
-        scale: 2,
-        useCORS: true
-    }).then(canvas => {
-        const imgData = canvas.toDataURL('image/png');
-        const pdf = new jsPDF('p', 'mm', 'a4');
-        const pageWidth = pdf.internal.pageSize.getWidth();
-        const pageHeight = pdf.internal.pageSize.getHeight();
+//     html2canvas(container, {
+//         scale: 2,
+//         useCORS: true
+//     }).then(canvas => {
+//         const imgData = canvas.toDataURL('image/png');
+//         const pdf = new jsPDF('p', 'mm', 'a4');
+//         const pageWidth = pdf.internal.pageSize.getWidth();
+//         const pageHeight = pdf.internal.pageSize.getHeight();
 
-        const imgProps = pdf.getImageProperties(imgData);
-        const pdfWidth = pageWidth;
-        const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+//         const imgProps = pdf.getImageProperties(imgData);
+//         const pdfWidth = pageWidth;
+//         const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
 
-        let position = 0;
+//         let position = 0;
 
-        if (pdfHeight > pageHeight) {
-            // Auto split if content overflows
-            pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
-        } else {
-            pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
-        }
+//         if (pdfHeight > pageHeight) {
+//             // Auto split if content overflows
+//             pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
+//         } else {
+//             pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
+//         }
 
-        document.body.removeChild(container); // Clean DOM
+//         document.body.removeChild(container); // Clean DOM
 
-        // Either download or open in new tab
-        // pdf.save(`${title}.pdf`);
-        window.open(pdf.output('bloburl'), '_blank');
-    });
-}
-
+//         // Either download or open in new tab
+//         // pdf.save(`${title}.pdf`);
+//         window.open(pdf.output('bloburl'), '_blank');
+//     });
+// }
 // ------------------------------
 
-// 6th trial :
+// // 6th Trial :bukak popup, okey cuma header ada kaler, border takde, margin bapak nipis, keluar 1 page je
 // function printTableMobile(result, listType, selectedBatch) {
 //     const table = contentPrintTable(result, listType, selectedBatch);  // Dapatkan table
 //     const { displayListType, displayStoreType, dateStr } = customTitle(result, listType);
@@ -438,7 +437,7 @@ function printTableMobile(result, listType, selectedBatch) {
 //             let position = 0;
 
 //             pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
-            
+
 //             // Lepas save atau open, buang dari DOM
 //             document.body.removeChild(container);
 
@@ -449,121 +448,65 @@ function printTableMobile(result, listType, selectedBatch) {
 //         });
 //     }, 800);  // Delay cukup untuk render
 // }
+// ------------------------------
+
+// 7th Trial : railway-pupeteer-render-pdf
+function printTableMobile(result, listType, selectedBatch) {
+    const table = contentPrintTable(result, listType, selectedBatch);
+
+    let { displayListType, displayStoreType, dateStr, totalQty } = customTitle(result, listType);
+    const title = `${displayListType.toUpperCase()} ${displayStoreType} ${dateStr} - ${selectedBatch}`;
+
+    const styleTag = `<style>${printStyle()}</style>`;
+    const wrapper = document.createElement('div');
+    wrapper.appendChild(table);
+//
+// table.outerHTML
+    const fullHTML = `
+    <html>
+        <head>
+            <title>${title}</title>
+            <style>
+                @font-face {
+                    font-family: 'MyCalibri';
+                    src: url('https://raw.githubusercontent.com/arifsahari/order_processing_webapp/main/flask_render_webapp/static/fonts/Calibri.woff2') format('woff2');
+                }
+                body { font-family: 'MyCalibri', 'Carlito', sans-serif }
+                ${printStyle()}
+            </style>
+        </head>
+        <body>
+            ${wrapper.innerHTML}
+        </body>
+    </html>`;
+
+    fetch('/print_mobile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            html: fullHTML,
+            filename: `${title}.pdf`
+        })
+    })
+    .then(res => {
+        if (!res.ok) throw new Error('Gagal hasilkan fail PDF');
+        return res.blob();
+    })
+    .then(blob => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${title}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+    })
+    .catch(err => alert('Error PDF: ' + err.message));
+}
 
 // ------------------------------
 
-// 7th trial : SUCCESS BUT RETURN BLANK PAGE
-// function printTableMobile(result, listType, selectedBatch) {
-//     const table = contentPrintTable(result, listType, selectedBatch);
-//     const { displayListType, displayStoreType, dateStr } = customTitle(result, listType);
-//     const title = `${displayListType.toUpperCase()} ${displayStoreType} ${dateStr} - ${selectedBatch}`;
-
-//     // Create container that will be in DOM (offscreen but rendered)
-//     const wrapper = document.createElement('div');
-//     wrapper.id = 'pdfWrapperActual';
-//     wrapper.style.position = 'absolute';
-//     wrapper.style.top = '-9999px'; // offscreen
-//     wrapper.style.left = '-9999px';
-//     wrapper.style.fontFamily = 'Calibri, Carlito, sans-serif';
-//     wrapper.innerHTML = `<style>${printStyle()}</style>`;
-//     console.log('📦 Table content:', table);
-
-//     wrapper.appendChild(table);
-//     document.body.appendChild(wrapper); // force render to apply font
-
-//     // Use html2pdf only after DOM is fully rendered
-//     setTimeout(() => {
-//         const opt = {
-//             margin: 0.5,
-//             filename: `${title}.pdf`,
-//             image: { type: 'jpeg', quality: 1 },
-//             html2canvas: {
-//                 scale: 2,
-//                 useCORS: true,
-//                 logging: true
-//             },
-//             jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
-//         };
-
-//         html2pdf().set(opt).from(wrapper).toPdf().get('pdf').then(pdf => {
-//             const blobUrl = pdf.output('bloburl');
-//             window.open(blobUrl, '_blank');
-//             document.body.removeChild(wrapper); // cleanup
-//         });
-//     }, 500); // wait to make sure font applied
-// }
 // ------------------------------
-
-// 8th trial : SUCCESS BUT RETURN BLANK PAGE
-// function printTableMobile(result, listType, selectedBatch) {
-//     const table = contentPrintTable(result, listType, selectedBatch);
-//     const { displayListType, displayStoreType, dateStr } = customTitle(result, listType);
-//     const title = `${displayListType.toUpperCase()} ${displayStoreType} ${dateStr} - ${selectedBatch}`;
-
-//     if (!table) {
-//         alert('Table not generated!');
-//         return;
-//     }
-
-//     const wrapper = document.createElement('div');
-//     wrapper.id = 'pdfWrapperActual';
-//     wrapper.style.position = 'absolute';
-//     wrapper.style.top = '-9999px';
-//     wrapper.style.left = '-9999px';
-//     wrapper.style.fontFamily = 'Calibri, Carlito, sans-serif';
-
-//     const styleTag = document.createElement('style');
-//     styleTag.innerHTML = printStyle();
-//     wrapper.appendChild(styleTag);
-//     wrapper.appendChild(table);
-
-//     document.body.appendChild(wrapper);
-
-//     setTimeout(() => {
-//         requestAnimationFrame(() => {
-//             const opt = {
-//                 margin: 0.5,
-//                 filename: `${title}.pdf`,
-//                 image: { type: 'jpeg', quality: 1 },
-//                 html2canvas: {
-//                     scale: 2,
-//                     useCORS: true,
-//                     logging: true
-//                 },
-//                 jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
-//             };
-
-//             html2pdf().set(opt).from(wrapper).toPdf().get('pdf').then(pdf => {
-//                 const blobUrl = pdf.output('bloburl');
-//                 window.open(blobUrl, '_blank');
-//                 document.body.removeChild(wrapper);
-//             });
-//         });
-//     }, 500);
-// }
-// ------------------------------
-
-
-
-// ------------------------------
-
-
-
-// ------------------------------
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 // ------------------------------
 // Main Function Print
 
