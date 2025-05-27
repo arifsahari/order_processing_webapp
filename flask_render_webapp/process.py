@@ -177,7 +177,7 @@ def process_step_a(df, DF_MASTER, SHIPPER, SIZE):
         'BigSeller Store Nickname', 'Order No', 'SKU', 'Product Name', 'Quantity',
         'Tracking Number', 'Receiver Name', 'Order Time', 'Package No', 'Marketplace',
         'Buyer Designed Logistics', 'Product Location', 'Country', 'Province (State)',
-        'Delivery Address', 'Post Code', 'Phone Number', 'Order Total',
+        'Delivery Address', 'Post Code', 'Phone Number', 'Order Total', 'Price',
         'Platform', 'Shipper', 'Courier', 'Store', 'SEQ', 'Size Sequence',
         'Design', 'Design Color Size', 'Design Color', 'Design Size', 'Barcode'
     ]
@@ -807,9 +807,9 @@ def awb_sf(df):
     sf_file.loc[2:2+len(sf_scan)-1, 'Recipient Telephone'] = sf_scan['Phone Number'].values
     sf_file.loc[2:2+len(sf_scan)-1, 'Receiver Address'] = sf_scan['Delivery Address'].values
     sf_file.loc[2:2+len(sf_scan)-1, 'Receiver Postal Code'] = sf_scan['Post Code'].values
-    sf_file.loc[2:2+len(sf_scan)-1, 'Unit Price'] = sf_scan['Order Total'].values
-    sf_file.loc[2:2+len(sf_scan)-1, 'Quantity'] = sf_scan['Quantity'].values
     sf_file.loc[2:2+len(sf_scan)-1, 'Unit Price'] = (sf_scan['Order Total'].values / sf_scan['Quantity'].values).round(2)
+    # sf_file.loc[2:2+len(sf_scan)-1, 'Unit Price'] = sf_scan['Order Total'].values
+    sf_file.loc[2:2+len(sf_scan)-1, 'Quantity'] = sf_scan['Quantity'].values
     sf_file.loc[2:2+len(sf_scan)-1, 'AWB Remarks'] = sf_scan['Remark'].values
     sf_file.loc[2:2+len(sf_scan)-1, a] = b
 
@@ -1219,23 +1219,43 @@ def pie_chart(df, x_col, y_col, agg='sum', limit=None, title=''):
 
 
 # Function : Generate Scatter Plot Chart
-def scatter_chart(df, x_col, y_col, title=''):
+def scatter_chart(df, x_col, y_col, z_col, agg='sum', limit=None, title=''):
     try:
         if x_col not in df.columns or y_col not in df.columns:
             return {'status': 'fail', 'message': 'Invalid columns'}
 
-        df = df.dropna(subset=[x_col, y_col])
-        xy_data = df[[x_col, y_col]].to_dict(orient='records')  # format: [{x:..., y:...}]
+        if z_col and z_col in df.columns:
+            df = df.dropna(subset=[z_col, x_col, y_col])
+            df_group = df.groupby(z_col)[[x_col, y_col]]
+
+            if agg == 'count':
+                result = df_group.count()
+            elif agg == 'sum':
+                result = df_group.sum()
+            elif agg == 'nunique':
+                result = df_group.nunique()
+            else :
+                result = df_group.mean()
+
+            chart_data = result.reset_index().sort_values(by=[y_col],ascending=False).head(limit)
+
+        else:
+            df = df.dropna(subset=[x_col, y_col])
+            df_result = df[[x_col, y_col]]
+
+        xy = chart_data[[x_col, y_col]].to_dict(orient='records')
+        # xy_data = chart_data[[x_col, y_col]].to_dict(orient='records')  # format: [{x:..., y:...}]
 
         return {
             'status': 'success',
             'title': title,
             'label': '',
-            'xy': [{'x': row[x_col], 'y': row[y_col]} for row in xy_data]
+            'xy': [{'x': row[x_col], 'y': row[y_col]} for row in xy]
         }
 
     except Exception as e:
         return {'status': 'fail', 'message': str(e)}
+
 
 
 # Function : Generate Heatmap Chart
