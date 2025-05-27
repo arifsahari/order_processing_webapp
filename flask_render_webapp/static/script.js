@@ -727,21 +727,236 @@ document.getElementById('chartSelector').addEventListener('change', function () 
 });
 
 
+// // version 1
+// function loadChart(chartType = 'bar', dataType = 'order_summary') {
+//     const selectedLimit = document.querySelector("input[name='bar_rank']:checked")?.value || 10;
+//     const ctx = document.getElementById('orderChart').getContext('2d');
+
+//     fetch(`/chartdata?type=${dataType}&bar_rank=${selectedLimit}`)
+//     // fetch(`/chartdata?type=${dataType}`)
+//         // .then(response => response.json())
+//         .then(response => {
+//             if (!response.ok) throw new Error(`Chart API error: ${response.status}`);
+//             return response.json();
+//         })
+//         .then(data => {
+//             if (data.status !== 'success') {
+//                 alert('Failed to load chart: ' + data.message);
+//                 return;
+//             }
+
+//             // Setting color
+//             // const colorList = ['#2b8cbe', '#67a9cf', '#d1e5f0', '#f7f7f7', '#fddbc7', '#ef8a62', '#b2182b'];
+//             const colorList = ['#2B8CBE', '#4097C4', '#54A1CA', '#66ABCF', '#7BB6D5',
+//                                 '#91C1DB', '#A4CBE0', '#BAD7E6', '#CFE2EC', '#E3ECF1',
+//                                 '#F7F7F7', '#F0E0E2', '#E9C9CD', '#E3B4BA','#DC9DA5',
+//                                 '#D58690', '#CE707B', '#C75A67', '#C04553', '#B82C3D', '#B2182B',
+//                                 '#B82C3D', '#C04553', '#C75A67', '#CE707B', '#D58690',
+//                                 '#DC9DA5', '#E3B4BA', '#E9C9CD', '#F0E0E2', '#F7F7F7',
+//                                 '#E3ECF1', '#CFE2EC', '#BAD7E6', '#A4CBE0', '#91C1DB',
+//                                 '#7BB6D5', '#66ABCF', '#54A1CA', '#4097C4', '#2B8CBE' ]
+
+//             const dataset = getDatasetByChartType(chartType, data, colorList);
+//             // const colors = data.x.map((_, i) => colorList[i % colorList.length]);
+//             let colors = [];
+
+//             if (chartType === 'bar' || chartType === 'line' || chartType === 'pie') {
+//                 colors = data.x.map((_, i) => colorList[i % colorList.length]);
+//             } else if (chartType === 'scatter') {
+//                 colors = data.xy.map((_, i) => colorList[i % colorList.length]);
+//             }
+//             // else if (chartType === 'matrix') {
+//             //     colors = data.matrix.map((_, i) => colorList[i % colorList.length]);
+//             // }
+//             console.log('Chart data:', data);
+//             console.log('FINAL DATASET:', dataset);
+
+//             // Clear existing chart
+//             if (window.orderChart instanceof Chart) {
+//                 window.orderChart.destroy();
+//             }
+
+//             // Generate new chart
+//             window.devicePixelRatio = 2;
+//             window.orderChart = new Chart(ctx, {
+//                 type: chartType,
+//                 plugins: [ChartDataLabels],
+//                 data: {
+//                     // labels: ['bar', 'line', 'pie'].includes(chartType) ? data.x : undefined,
+//                     // dataset: [{ dataset }],
+//                     labels: data.x,
+//                     datasets: [{
+//                         label: data.label || 'Data',
+//                         data: data.y,
+//                         backgroundColor: colors,
+//                         borderColor: 'grey',
+//                         borderWidth: 2,
+//                         borderRadius: 4,
+//                         fill: chartType === 'line' ? false : true,
+//                         tension: 0.3, // smooth line
+//                         barPercentage: 1,         // Kawal lebar bar
+//                         // categoryPercentage: 0.9
+//                     }]
+//                 },
+//                 options: {
+//                     // indexAxis: 'y',
+//                     // indexAxis: chartType === 'bar' ? 'y' : 'x',
+//                     // maintainAspectRatio: false,
+//                     // responsive: true,
+//                     // scales: {
+//                     //     x: {
+//                     //         suggestedMax: Math.max(...data.y) * 1.1,
+//                     //         // type: data.time ? 'time' : 'category',
+//                     //         // time: data.time ? { unit: 'day' } : undefined,
+//                     //         grid: { color: 'grey', lineWidth: 1 },
+//                     //         border: { color: 'black', width: 2 },
+//                     //         beginAtZero: true,
+//                     //         ticks: { font: { size: 14, weight: 'bold' }, color: 'black' }
+//                     //     },
+//                     //     y: {
+//                     //         grid: { color: 'grey', lineWidth: 1 },
+//                     //         border: { color: 'black', width: 2 },
+//                     //         ticks: { font: { size: 14, weight: 'bold' }, color: 'black' }
+//                     //     }
+//                     // },
+//                     // layout: { padding: { right: 30, left: 0 }, borderWidth: 1 },
+//                     plugins: {
+//                     //     datalabels: {
+//                     //         display: chartType !== 'line',
+//                     //         anchor: 'end',
+//                     //         align: 'right',
+//                     //         color: 'black',
+//                     //         font: { size: 16, weight: 'bold' },
+//                     //         formatter: value => value
+//                     //    },
+//                         title: {
+//                             display: true,
+//                             text: data.title || 'Order Summary',
+//                     //        font: { size: 22, family: 'Calibri', weight: 'bold', color: 'black' }
+//                         }
+//                     //     legend: {
+//                     //         display: true,
+//                     //         labels: { font: { size: 16 } }
+//                     //     }
+//                     }
+//                 }
+//             });
+//         });
+// }
+
+
+// ------------------------------
+
+// version 2
+// function loadChart(chartType = 'bar', dataType = 'order_summary') {
+//   const selectedLimit = document.querySelector("input[name='bar_rank']:checked")?.value || 10;
+//   const ctx = document.getElementById('orderChart').getContext('2d');
+
+//   fetch(`/chartdata?type=${dataType}&bar_rank=${selectedLimit}`)
+//     .then(response => {
+//       if (!response.ok) throw new Error(`Chart API error: ${response.status}`);
+//       return response.json();
+//     })
+//     .then(data => {
+//       if (data.status !== 'success') {
+//         alert('Data gagal diproses: ' + data.message);
+//         return;
+//       }
+
+//       console.log('Chart data:', data);
+
+//       // Generate color list
+//       const colorList = ['#2B8EBE', '#4097C4', '#54A1CA', '#66ABCF', '#7BB6D5',
+//         '#91C1DB', '#A4CBE0', '#BAD7E6', '#CFE2EC', '#E3ECF1',
+//         '#F7F7F7', '#F0E0E2', '#E9C9CD', '#E3B4BA', '#DC9DA5',
+//         '#D58690', '#CE707B', '#C75A67', '#C04553', '#B82C3D'];
+
+//       // Generate dataset from helper
+//       const dataset = getDatasetByChartType(chartType, data, colorList);
+//       console.log('FINAL DATASET:', dataset);
+
+//       // Destroy previous chart
+//       if (window.orderChart instanceof Chart) {
+//         window.orderChart.destroy();
+//       }
+
+//       // Chart setup
+//       window.orderChart = new Chart(ctx, {
+//         type: chartType,
+//         data: {
+//           labels: (chartType === 'bar' || chartType === 'line' || chartType === 'pie') ? data.x : undefined,
+//           datasets: [dataset]
+//         },
+//         options: {
+//           responsive: true,
+//           maintainAspectRatio: false,
+//           indexAxis: chartType === 'bar' ? 'y' : 'x',
+//           scales: chartType === 'scatter' || chartType === 'matrix' ? undefined : {
+//             x: {
+//               grid: { color: 'grey' },
+//               border: { color: 'black' },
+//               ticks: { color: 'black' }
+//             },
+//             y: {
+//               grid: { color: 'grey' },
+//               border: { color: 'black' },
+//               ticks: { color: 'black' },
+//               beginAtZero: true
+//             }
+//           },
+//           plugins: {
+//             title: {
+//               display: true,
+//               text: data.title || 'Chart',
+//               font: { size: 22, weight: 'bold' }
+//             },
+//             legend: {
+//               display: true,
+//               labels: { font: { size: 14, family: 'Calibri' } }
+//             },
+//             datalabels: {
+//               display: chartType !== 'line' && chartType !== 'scatter' && chartType !== 'matrix',
+//               anchor: 'end',
+//               align: 'right',
+//               color: 'black',
+//               font: { size: 14, weight: 'bold' },
+//               formatter: value => value,
+//               clamp: true
+//             }
+//           },
+//           layout: { padding: { right: 30, left: 0 } }
+//         },
+//         plugins: [ChartDataLabels]
+//       });
+//     })
+//     .catch(error => {
+//       alert('Gagal memuatkan carta: ' + error.message);
+//       console.error(error);
+//     });
+// }
+
+
+// ------------------------------
+
+// latest version
 function loadChart(chartType = 'bar', dataType = 'order_summary') {
     const selectedLimit = document.querySelector("input[name='bar_rank']:checked")?.value || 10;
+    const ctx = document.getElementById('orderChart').getContext('2d');
 
     fetch(`/chartdata?type=${dataType}&bar_rank=${selectedLimit}`)
-
-    // fetch(`/chartdata?type=${dataType }&bar_rank=${selectedLimit}`)
-        .then(response => response.json())
+    // fetch(`/chartdata?type=${dataType}`)
+        // .then(response => response.json())
+        .then(response => {
+            if (!response.ok) throw new Error(`Chart API error: ${response.status}`);
+            return response.json();
+        })
         .then(data => {
             if (data.status !== 'success') {
                 alert('Failed to load chart: ' + data.message);
                 return;
             }
 
-            const ctx = document.getElementById('orderChart').getContext('2d');
-            // const colorList = ['#2b8cbe', '#67a9cf', '#d1e5f0', '#f7f7f7', '#fddbc7', '#ef8a62', '#b2182b'];
+            // Setting color
             const colorList = ['#2B8CBE', '#4097C4', '#54A1CA', '#66ABCF', '#7BB6D5',
                                 '#91C1DB', '#A4CBE0', '#BAD7E6', '#CFE2EC', '#E3ECF1',
                                 '#F7F7F7', '#F0E0E2', '#E9C9CD', '#E3B4BA','#DC9DA5',
@@ -751,7 +966,21 @@ function loadChart(chartType = 'bar', dataType = 'order_summary') {
                                 '#E3ECF1', '#CFE2EC', '#BAD7E6', '#A4CBE0', '#91C1DB',
                                 '#7BB6D5', '#66ABCF', '#54A1CA', '#4097C4', '#2B8CBE' ]
 
-           const colors = data.x.map((_, i) => colorList[i % colorList.length]);
+            // const colors = data.x.map((_, i) => colorList[i % colorList.length]);
+            // let colors = [];
+
+            // if (chartType === 'bar' || chartType === 'line' || chartType === 'pie') {
+            //     colors = data.x.map((_, i) => colorList[i % colorList.length]);
+            // } else if (chartType === 'scatter') {
+            //     colors = data.xy.map((_, i) => colorList[i % colorList.length]);
+            // }
+            // else if (chartType === 'matrix') {
+            //     colors = data.matrix.map((_, i) => colorList[i % colorList.length]);
+            // }
+
+            const dataset = getDatasetByChartType(chartType, data, colorList);
+            console.log('Chart data:', data);
+            console.log('Final Dataset:', dataset);
 
             // Clear existing chart
             if (window.orderChart instanceof Chart) {
@@ -764,67 +993,24 @@ function loadChart(chartType = 'bar', dataType = 'order_summary') {
                 type: chartType,
                 plugins: [ChartDataLabels],
                 data: {
-                    labels: data.x,
-                    datasets: [{
-                        // type: 'bar',
-
-                        label: data.label || 'Data',
-                        data: data.y,
-                        backgroundColor: colors,
-                        borderColor: 'grey',
-                        borderWidth: 2,
-                        borderRadius: 4,
-                        fill: chartType === 'line' ? false : true,
-                        tension: 0.3, // smooth line
-                        barPercentage: 1,         // Kawal lebar bar
-                        // categoryPercentage: 0.9
-                    }]
+                    labels: ['bar', 'line', 'pie'].includes(chartType) ? data.x : undefined,
+                    datasets: [getDatasetByChartType(chartType, data, colorList)]
                 },
                 options: {
-                    // indexAxis: 'y',
-                    // indexAxis: chartType === 'bar' ? 'y' : 'x',
-                    // maintainAspectRatio: false,
-                    // responsive: true,
-                    // scales: {
-                    //     x: {
-                    //         suggestedMax: Math.max(...data.y) * 1.1,
-                    //         // type: data.time ? 'time' : 'category',
-                    //         // time: data.time ? { unit: 'day' } : undefined,
-                    //         grid: { color: 'grey', lineWidth: 1 },
-                    //         border: { color: 'black', width: 2 },
-                    //         beginAtZero: true,
-                    //         ticks: { font: { size: 14, weight: 'bold' }, color: 'black' }
-                    //     },
-                    //     y: {
-                    //         grid: { color: 'grey', lineWidth: 1 },
-                    //         border: { color: 'black', width: 2 },
-                    //         ticks: { font: { size: 14, weight: 'bold' }, color: 'black' }
-                    //     }
-                    // },
-                    // layout: { padding: { right: 30, left: 0 }, borderWidth: 1 },
                     plugins: {
                         datalabels: {
-                            display: chartType !== 'line',
-                    //         anchor: 'end',
-                    //         align: 'right',
-                    //         color: 'black',
-                    //         font: { size: 16, weight: 'bold' },
-                    //         formatter: value => value
-                       },
+                            display: chartType !== 'line' && chartType !== 'scatter' && chartType !== 'matrix'
+
+                        },
                         title: {
                             display: true,
                             text: data.title || 'Order Summary',
-                    //        font: { size: 22, family: 'Calibri', weight: 'bold', color: 'black' }
                         }
-                    //     legend: {
-                    //         display: true,
-                    //         labels: { font: { size: 16 } }
-                    //     }
                     }
                 }
             });
         });
 }
+// ---------------------------
 
 
-// ------------------------------
