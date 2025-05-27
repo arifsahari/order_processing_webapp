@@ -27,7 +27,7 @@ from .process import (
     data_overview, generate_list, get_latest_folder, latest_tracking_files,
     process_abx, process_sf, process_nv, export_file, awb_ninjavan,
     awb_abx, awb_sf, scan_mp, scan_web, tracking_update, order_mark,
-    bar_chart, line_chart, pie_chart
+    bar_chart, line_chart, pie_chart, timeseries_chart, heatmap_chart, scatter_chart
 )
 
 from . import mapper
@@ -551,9 +551,15 @@ Route for Chart Data
 """
 # Route : Chart data for visualization
 def chartdata():
-    """
-    chart_type = request.args.get('type', 'orders')
+    # chart_type = request.args.get('type', 'orders')
+    value = request.args.get('type', '')
     limit = request.args.get('bar_rank', default=None, type=int)
+
+    if '-' in value:
+        chart, chart_type = value.split('-', 1)
+    else:
+        chart = 'bar'
+        chart_type = value
 
     if not os.path.exists(PATHFILE_B):
         return jsonify({'status': 'error', 'message': 'CSV file not found'})
@@ -584,21 +590,30 @@ def chartdata():
             limit=limit, title='Product by Order Count')
 
     elif chart_type == 'order_daily':
-        result = line_chart(
+        result = timeseries_chart(
             df_chart, x_col='Order Time', y_col='Order No', agg='count',
             limit=None, title='Daily Order', time_rule='D')
     elif chart_type == 'order_monthly':
-        result = line_chart(
+        result = timeseries_chart(
             df_chart, x_col='Order Time', y_col='Order No', agg='count',
             limit=None, title='Monthly Order', time_rule='M')
+
+    elif chart_type == 'qty_vs_order':
+        result = scatter_chart(
+            df_chart, x_col='Quantity', y_col='Price', z_col='Design', agg='mean',
+            limit=limit, title='Scatter')
+
+    elif chart_type == 'qty_vs_price':
+        result = heatmap_chart(
+            df_chart, x_col='Quantity', y_col='Price', value_col='Design', title='Heatmap')
+        
     else:
         return jsonify({'status': 'fail', 'message': 'Unknown chart type'})
 
     return jsonify({'status': 'success', **result})
-    """
+
 # ---------------
-
-
+    """
     chart_type = request.args.get('type', 'orders')
 
     bar_order_sum = df_chart.groupby(['Store'])['Order No'].nunique().reset_index(name='Total Orders')
@@ -658,7 +673,7 @@ def chartdata():
         data = { 'status': 'fail', 'message': 'Unknown chart type' }
 
     return jsonify(data)
-
+    """
 # ---------------
 
 
@@ -736,8 +751,19 @@ def list_files():
                 if os.path.isfile(os.path.join(folder_path, f)) and allowed_file(f)
             ]
             categorized_files[folder_name] = sub_files
+            
+    links = load_links()
+    full_links = {
+        name: url_for('static', filename=path)
+        for name, path in links.items()
+    }
 
-    return render_template('list_file.html', categorized_files=categorized_files)
+    return render_template('list_file.html', categorized_files=categorized_files, links=full_links)
+
+
+def load_links():
+    with open('link.json') as f:
+        return json.load(f)
 
 
 """
