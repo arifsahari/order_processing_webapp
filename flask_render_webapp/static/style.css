@@ -56,21 +56,23 @@
 .select2-container--default .select2-selection--multiple {
     min-height: 10px !important;
     height: auto !important;
-    padding: 0!important;
-    font-size: 10px;
+    padding-top: 1px !important;
+    line-height: 16px !important;
+    font-size: 14px; /* affect dropdown height */
 }
 
 /* search input in multiple box */
 .select2-container--default .select2-selection--multiple .select2-search__field {
     height: 10px !important;
     line-height: 20px !important;
-    font-size: 14px !important;
+    font-size: 12px !important;
+    padding: 5px !important;  /* padding placeholder */
 }
 
 /* search option */
 .select2-results__option {
     font-size: 14px !important;
-    padding: 2px 2px !important;
+    padding: 0 !important;
 }
 
 #selectDesign #selectDesignColor #selectDesignColorSize {
