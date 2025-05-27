@@ -2,17 +2,36 @@
 {% block content %}
     <h4>Uploaded Files</h4>
     <br>
+    <section>
+        <div class='row'>
 
-<!--             <ul>
-                {% for file in files %}
-                <li class='list-gap' >
-                <li class='text-break mx-auto w-100' >
-                    {{ file }}
-                    <button class='rightside-button'  onclick="deleteFile('{{ folder }}/{{ file }}')">Delete</button>
-                    <button onclick="deleteFile('{{ folder }}/{{ file }}')">Delete</button>
-                </li>
-                {% endfor %}
-            </ul> -->
+            <div class='col-md-3'>
+                <div>
+                    <label for='mapperUpload'>Upload Mapper Files</label>
+                    <input type='file' id='mapperUpload' class='form-control'>
+                    <!-- <div class='btn-radio'>
+                        <input type='radio' name='mapper_upload' value='mapper_design'> Design Name
+                        <input type='radio' name='mapper_upload' value='mapper_courier_state'> Courier State
+                        <input type='radio' name='mapper_upload' value='mapper_size'> Size
+                    </div> -->
+                    <div>
+                        <button class='btn-radio' onclick='uploadFile()'>Upload Files</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class='col-md'>
+                <div class='custom-link-list'>
+                        {% for name, link in links.items() %}
+                            <li><a href='{{ link }}' download>{{ name.replace('_', ' ')|title }}</a></li>
+                        {% endfor %}
+                </div>
+            </div>
+            <div class='col-md'>
+            </div>
+            
+        </div>
+    </section>
 
     {% for folder, files in categorized_files.items() %}
     {% if folder != 'upload' %}
