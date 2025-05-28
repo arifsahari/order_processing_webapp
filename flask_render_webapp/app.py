@@ -527,14 +527,15 @@ def print_from_mobile():
             print('HTML content is empty.')
             return 'No HTML provided', 400
 
-        railway_url = 'https://pdf-gen.up.railway.app/generate'
+        # generator_url = 'https://pdf-gen.up.railway.app/generate'        # Railway
+        generator_url = 'https://pdf-generator-geqb.onrender.com/generate'        # Render
         response = requests.post(
-            railway_url,
+            generator_url,
             json={'html': html, 'filename': filename}
         )
 
         if response.ok:
-            print(f'PDF generated succesfully: {filename}')
+            print(f'PDF succesfully generated: {filename}')
             return send_file(BytesIO(response.content), as_attachment=True, download_name=filename)
         else:
             print('Railway response error:', response.status_code, response.text)
@@ -731,11 +732,6 @@ def get_table():
 list_file.html
 """
 
-def load_links():
-    with open('link.json') as f:
-        return json.load(f)
-
-
 # Route : Display list of uploaded files
 @app.route('/files', methods=['GET'])
 def list_files():
@@ -764,6 +760,12 @@ def list_files():
     }
 
     return render_template('list_file.html', categorized_files=categorized_files, links=full_links)
+
+def load_links():
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    json_path = os.path.join(current_dir, 'link.json')
+    with open(json_path) as f:
+        return json.load(f)
 
 
 """
