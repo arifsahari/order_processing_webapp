@@ -1,0 +1,6 @@
+{
+  "sample:_courier_state": "https://raw.githubusercontent.com/arifsahari/order_processing_webapp/refs/heads/main/flask_render_webapp/sample/courier_state.csv",
+  "sample:_design_name": "https://raw.githubusercontent.com/arifsahari/order_processing_webapp/main/flask_render_webapp/sample/design_name.csv",
+  "sample:_size": "https://raw.githubusercontent.com/arifsahari/order_processing_webapp/main/flask_render_webapp/sample/size.csv"
+}
+
