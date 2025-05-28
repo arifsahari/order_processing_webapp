@@ -4,7 +4,7 @@
 # FILE: app.py
 """"""""""""""""""""""""""""""
 
-# ========== Import Requirements ==========
+# ---------- Import Requirements ----------
 
 # Library
 from flask import Flask, render_template, request, jsonify, send_file, url_for
@@ -37,7 +37,7 @@ app = Flask(__name__)
 app.register_blueprint(process_blueprint, url_prefix='/process')
 
 
-# ========== Configuration ==========
+# ---------- Configuration ----------
 
 # Directories
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -76,7 +76,7 @@ if not os.path.exists(EXPORT_FOLDER):
     os.makedirs(EXPORT_FOLDER, exist_ok=True)
 
 
-# ========== Utility ==========
+# ---------- Utility ----------
 
 # Function : check for latest files from upload folder
 def get_latest_file():
@@ -117,7 +117,7 @@ def get_latest_file():
         return None
 """
 
-# ========== Routes ==========
+# ---------- Routes ----------
 
 # Route : Upload files
 @app.route('/upload', methods=['POST'])
@@ -550,6 +550,7 @@ def print_from_mobile():
 Route for Chart Data
 """
 # Route : Chart data for visualization
+@app.route('/chartdata')
 def chartdata():
     # chart_type = request.args.get('type', 'orders')
     value = request.args.get('type', '')
@@ -574,7 +575,6 @@ def chartdata():
         'WEB NV': 'Ninjavan', 'WEB AB': 'ABX', 'WEB SF': 'SF Express',
         'WEB OS': 'Oversea', 'WEB SP': 'Self Pickup'
     })
-
 
     if chart_type == 'order_summary':
         result = bar_chart(
@@ -677,7 +677,7 @@ def chartdata():
 # ---------------
 
 
-# ========== Page Routes ==========
+# ---------- Page Routes ----------
 
 """
 index.html
@@ -932,8 +932,7 @@ scan_item.html
 #     items = orders.get(tracking_number, [])  # Dapatkan item berkaitan tracking number
 #     return render_template('scan_inhan.html', tracking_number=tracking_number, items=items)
 
-
-# ========== Run Flask Server ==========
+# ---------- Run Flask Server ----------
 
 # Run server Flask
 if __name__ == '__main__':
