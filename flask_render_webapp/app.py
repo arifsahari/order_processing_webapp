@@ -731,6 +731,11 @@ def get_table():
 list_file.html
 """
 
+def load_links():
+    with open('link.json') as f:
+        return json.load(f)
+
+
 # Route : Display list of uploaded files
 @app.route('/files', methods=['GET'])
 def list_files():
@@ -759,11 +764,6 @@ def list_files():
     }
 
     return render_template('list_file.html', categorized_files=categorized_files, links=full_links)
-
-
-def load_links():
-    with open('link.json') as f:
-        return json.load(f)
 
 
 """
