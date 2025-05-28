@@ -940,7 +940,7 @@ document.getElementById('chartSelector').addEventListener('change', function () 
 
 // latest version
 function loadChart(chartType = 'bar', dataType = 'order_summary') {
-    const selectedLimit = document.querySelector("input[name='bar_rank']:checked")?.value || 10;
+    const selectedLimit = document.querySelector('input[name="bar_rank"]:checked')?.value || 10;
     const ctx = document.getElementById('orderChart').getContext('2d');
 
     fetch(`/chartdata?type=${dataType}&bar_rank=${selectedLimit}`)
@@ -993,18 +993,19 @@ function loadChart(chartType = 'bar', dataType = 'order_summary') {
                 type: chartType,
                 plugins: [ChartDataLabels],
                 data: {
-                    labels: ['bar', 'line', 'pie'].includes(chartType) ? data.x : undefined,
-                    datasets: [getDatasetByChartType(chartType, data, colorList)]
+                    // labels: ['bar', 'line', 'pie'].includes(chartType) ? data.x : undefined,
+                    // datasets: [getDatasetByChartType(chartType, data, colorList)]
+                    labels: (chartType === 'bar' || chartType === 'line' || chartType === 'pie') ? data.x : undefined,
+                    datasets: [dataset]
                 },
                 options: {
                     plugins: {
                         datalabels: {
                             display: chartType !== 'line' && chartType !== 'scatter' && chartType !== 'matrix'
-
                         },
                         title: {
                             display: true,
-                            text: data.title || 'Order Summary',
+                            text: data.title || 'Order Summary'
                         }
                     }
                 }
