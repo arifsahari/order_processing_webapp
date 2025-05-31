@@ -3,6 +3,24 @@
 
 
 // ------------------------------
+// wakeup_service.js
+
+document.addEventListener('DOMContentLoaded', function () {
+  wakeUpPDFService();
+});
+
+async function wakeUpPDFService() {
+  try {
+    await fetch('https://pdf-generator-geqb.onrender.com', { method: 'GET', mode: 'no-cors' });
+    console.log('PDF service is now awake.');
+  } catch (err) {
+    console.warn('Could not wake up PDF service:', err);
+  }
+}
+// ------------------------------
+
+
+// ------------------------------
 // Print Contents
 
 function contentPrintTable(result, listType, selectedBatch) {
